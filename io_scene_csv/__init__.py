@@ -33,6 +33,7 @@ class CSVImporter(bpy.types.Operator):
         tmp = basename.split(".")
         return tmp[0]
 
+    # Action by menu item selection
     def execute(self, context):
 
         path = self.filepath
@@ -43,35 +44,24 @@ class CSVImporter(bpy.types.Operator):
         loader = CSVLoader.CSVLoader()
         meshes_list = loader.loadCSV(path)
 
+        print("Loaded " + str(len(meshes_list)) + " meshes")
+
         # Create object in Blender's editor
+        m_idx = 0
         for m in meshes_list:
 
-            mesh_data = bpy.data.meshes.new(self.getFileName(path) + "_data")
-            obj = bpy.data.objects.new(self.getFileName(path), mesh_data)
-            scene = bpy.context.scene
-            scene.objects.link(obj)
-            obj.select = True
+            obj_name = self.getFileName(path)
 
-            bm = bmesh.new()
-            bm.from_mesh(mesh_data)
+            me = bpy.data.meshes.new(obj_name + str(m_idx))
+            me.from_pydata(m.getVerticies(), [], m.getFaces())
 
-            vert = []
-
-            for v in m.getVerticies():
-                vert.append(bm.verts.new(v))
-
-            for fc in m.getFaces():
-                face = []
-                for idx in fc:
-                    face.append(vert[idx])
-
-                bm.faces.new(face)
-                print(tuple(face))
-
-            bm.to_mesh(mesh_data)
+            obj = bpy.data.objects.new(me.name, me)
+            bpy.context.scene.objects.link(obj)
+            m_idx = m_idx + 1
 
         return {'FINISHED'}
 
+    # Select file for import
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
