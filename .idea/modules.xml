@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/BlenderCSVImporter.iml" filepath="$PROJECT_DIR$/.idea/BlenderCSVImporter.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/BlenderCSV.iml" filepath="$PROJECT_DIR$/.idea/BlenderCSV.iml" />
     </modules>
   </component>
 </project>
