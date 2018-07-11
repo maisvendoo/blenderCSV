@@ -40,7 +40,18 @@ class CSVLoader:
         tmp = line.rstrip('\n').rstrip('\r').rstrip(' ').split(",")
         return tmp
 
+    def triangulate(self, face):
+        faces = []
+        for i in range(1, len(face) - 1):
+            faces.append([face[0], face[i], face[i+1]])
+
+        print(faces)
+
+        return faces
+
     def loadCSV(self, filePath):
+
+        self.meshes_list.clear()
 
         # Open CSV file
         f = open(filePath, 'r')
@@ -60,17 +71,33 @@ class CSVLoader:
 
             # Vertex detection
             if tmp[0] == "AddVertex":
-                mesh.addVertex((float(tmp[1]), float(tmp[2]), float(tmp[3])))
+                try:
+                    x = float(tmp[1])
+                    y = float(tmp[2])
+                    z = float(tmp[3])
+                    vertex = (x, y, z)
+                    mesh.addVertex(vertex)
+                except ValueError:
+                    pass
+
 
             # Face detection
             if tmp[0] == "AddFace":
                 face = []
                 for i in range(len(tmp)):
                     if i != 0:
-                        face.append(int(tmp[i]))
+                        try:
+                            v = int(tmp[i])
+                            face.append(v)
+                        except ValueError:
+                            pass
 
-                mesh.addFace(tuple(face))
-
+                if len(face) > 3:
+                    faces = self.triangulate(face)
+                    for fc in faces:
+                        mesh.addFace(fc)
+                else:
+                    mesh.addFace(face)
 
         f.close()
 

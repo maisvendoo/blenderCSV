@@ -15,6 +15,7 @@ bl_info = {
 
 import bpy
 import bmesh
+import os
 
 #-------------------------------------------------------------------------------
 #
@@ -25,26 +26,55 @@ class CSVImporter(bpy.types.Operator):
     bl_label = "OpenBVE CSV model (*.csv)"
     bl_options = {'REGISTER', 'UNDO'}
 
-    def execute(self, context):        
+    filepath = bpy.props.StringProperty(subtype="FILE_PATH")
+
+    def getFileName(self, path):
+        basename = os.path.basename(path)
+        tmp = basename.split(".")
+        return tmp[0]
+
+    def execute(self, context):
+
+        path = self.filepath
+        print("Loading model from file: " + path)
 
         from . import CSVLoader
+        # Load model from CSV file
         loader = CSVLoader.CSVLoader()
-        path = "F:/work/vr/3D-graphics/obj2csv/models/csv/digits.csv"
         meshes_list = loader.loadCSV(path)
 
+        # Create object in Blender's editor
         for m in meshes_list:
-            mesh_data = bpy.data.meshes.new("mesh data")
-            mesh_data.from_pydata(m.getVerticies(), [], m.getFaces())
-            mesh_data.update()
 
-            obj = bpy.data.objects.new("DigitCube", mesh_data)
+            mesh_data = bpy.data.meshes.new(self.getFileName(path) + "_data")
+            obj = bpy.data.objects.new(self.getFileName(path), mesh_data)
             scene = bpy.context.scene
             scene.objects.link(obj)
             obj.select = True
 
+            bm = bmesh.new()
+            bm.from_mesh(mesh_data)
+
+            vert = []
+
+            for v in m.getVerticies():
+                vert.append(bm.verts.new(v))
+
+            for fc in m.getFaces():
+                face = []
+                for idx in fc:
+                    face.append(vert[idx])
+
+                bm.faces.new(face)
+                print(tuple(face))
+
+            bm.to_mesh(mesh_data)
+
         return {'FINISHED'}
 
-    
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
 
 #-------------------------------------------------------------------------------
 #
@@ -59,12 +89,6 @@ def register():
        
     bpy.types.INFO_MT_file_import.append(menu_import)
     bpy.utils.register_class(CSVImporter)
-
-    #from src import CSVLoader
-
-    #loader = CSVLoader.CSVLoader()
-    #path = "../../obj2csv/models/csv/digits.csv"
-    #loader.loadCSV(path)
 
 
 #-------------------------------------------------------------------------------
