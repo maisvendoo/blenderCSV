@@ -5,7 +5,7 @@
 #       Developer: Dmitry Pritykin
 #
 #-------------------------------------------------------------------------------
-
+'''
 bl_info = {
     "name": "Importer OpenBVE CSV models",
     "category": "Import-Export",
@@ -95,3 +95,4 @@ def unregister():
 #-------------------------------------------------------------------------------
 if __name__ == "__main__":
     register()
+'''

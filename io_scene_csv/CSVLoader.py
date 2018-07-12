@@ -5,6 +5,7 @@
 #       Developer: Dmirty Pritykin
 #
 #-------------------------------------------------------------------------------
+import math
 
 #-------------------------------------------------------------------------------
 #
@@ -82,6 +83,64 @@ class CSVLoader:
         face = (6, 2, 1, 5)
         mesh.faces_list.append(face)
 
+    def is_zero(self, x):
+        if (math.fabs(x) < 1e-4):
+            return 0
+        else:
+            return x
+
+    # ---------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------
+    def createCylinder(self, command, mesh):
+
+        n = 0
+        r1 = 0.0
+        r2 = 0.0
+        h = 0.0
+
+        try:
+            n = int(command[1])
+            r1 = float(command[2])
+            r2 = float(command[3])
+            h = float(command[4])
+        except Exception as ex:
+            print(ex)
+            return
+
+        # Vertices generation
+        for i in range(0, n):
+            x = round(r1 * math.cos(2 * math.pi * i / n), 4)
+            y = round(h / 2.0, 4)
+            z = round(r1 * math.sin(2 * math.pi * i / n), 4)
+            mesh.vertex_list.append((x, y, z))
+
+            x = round(r2 * math.cos(2 * math.pi * i / n), 4)
+            y = round(-h / 2.0, 4)
+            z = round(r2 * math.sin(2 * math.pi * i / n), 4)
+            mesh.vertex_list.append((x, y, z))
+
+        # Side faces generation
+        for i in range(0, n):
+            face = (2 * (i + 1), 2 * (i + 1) + 1, 2 * (i + 1) - 1, 2 * i)
+            mesh.faces_list.append(face)
+
+        mesh.faces_list.append((0, 1, 2 * n - 1, 2 * n - 2))
+
+        # Lower face generation
+        if r2 > 0:
+            face = []
+            for i in range(n-1, -1, -1):
+                face.append(2*i)
+            mesh.faces_list.append(tuple(face))
+
+        # Upper face generation
+        if r1 > 0:
+            face = []
+            for i in range(0, n):
+                face.append(2*i + 1)
+            mesh.faces_list.append(tuple(face))
+
     # ---------------------------------------------------------------------------
     #
     # ---------------------------------------------------------------------------
@@ -150,6 +209,9 @@ class CSVLoader:
 
                 if command[0] == "Cube":
                     self.createCube(command, mesh)
+
+                if command[0] == "Cylinder":
+                    self.createCylinder(command, mesh)
 
             meshes_list.append(mesh)
 
