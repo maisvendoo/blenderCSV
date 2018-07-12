@@ -39,26 +39,28 @@ class CSVImporter(bpy.types.Operator):
         path = self.filepath
         print("Loading model from file: " + path)
 
-        from . import CSVLoader
+        from . import CSV
+
         # Load model from CSV file
-        loader = CSVLoader.CSVLoader()
+        loader = CSV.CSVLoader()
         meshes_list = loader.loadCSV(path)
 
         print("Loaded " + str(len(meshes_list)) + " meshes")
 
-        # Create object in Blender's editor
-        m_idx = 0
-        for m in meshes_list:
+        # Create all objects in Blender's editor
+        for m_idx, m in enumerate(meshes_list):
 
+            # Constract object name from file name
             obj_name = self.getFileName(path)
 
+            # Create mesh from CSV geometry data
             me = bpy.data.meshes.new(obj_name + "-" + str(m_idx))
             me.from_pydata(m.vertex_list, [], m.faces_list)
             me.update(calc_edges=True)
 
+            # Create object and link it to scene
             obj = bpy.data.objects.new(me.name, me)
             bpy.context.scene.objects.link(obj)
-            m_idx = m_idx + 1
 
         return {'FINISHED'}
 
@@ -70,25 +72,49 @@ class CSVImporter(bpy.types.Operator):
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
+class CSVExporter(bpy.types.Operator):
+    """CSV models exporter"""
+    bl_idname = "export_scene.csv"
+    bl_label = "OpenBVE CSV model (*.csv)"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        return {'RUNNING_MODAL'}
+
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
 def menu_import(self, context):
     self.layout.operator(CSVImporter.bl_idname, text=CSVImporter.bl_label)
 
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
+def menu_export(self, context):
+    self.layout.operator(CSVExporter.bl_idname, text=CSVExporter.bl_label)
+
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
 def register():
-       
     bpy.types.INFO_MT_file_import.append(menu_import)
     bpy.utils.register_class(CSVImporter)
 
+    bpy.types.INFO_MT_file_export.append(menu_export)
+    bpy.utils.register_class(CSVExporter)
 
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
 def unregister():
     bpy.types.INFO_MT_file_import.remove(menu_import)
-    bpy.utils.register_class(CSVImporter)
+    bpy.utils.unregister_class(CSVImporter)
 
+    bpy.types.INFO_MT_file_export.remove(menu_export)
+    bpy.utils.unregister_class(CSVExporter)
 
 #-------------------------------------------------------------------------------
 #
