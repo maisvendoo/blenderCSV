@@ -78,10 +78,56 @@ class CSVExporter(bpy.types.Operator):
     bl_label = "OpenBVE CSV model (*.csv)"
     bl_options = {'REGISTER', 'UNDO'}
 
+    filename_ext = ".csv"
+    filter_glob = bpy.props.StringProperty(
+        default = "*.csv",
+        options={'HIDDEN'},
+    )
+
+    filepath = bpy.props.StringProperty(subtype="FILE_PATH")
+
+    def getSelectedMeshes(self):
+        objs = bpy.context.selected_objects
+
+        meshes_list = []
+
+        for obj in objs:
+            if obj.type == 'MESH':
+
+                # CSV mesh creation
+                from .CSV import CSVmesh
+                mesh = CSVmesh()
+
+                print("Process object: " + obj.name)
+
+                # Get mesh data from object
+                me = obj.data
+                # Get verticies
+                for i, v in enumerate(me.vertices):
+                    mesh.vertex_list.append(list(v.co))
+                    print(mesh.vertex_list[i])
+
+                # Get faces
+                for i, face in enumerate(me.polygons):
+                    mesh.faces_list.append(list(face.vertices))
+                    print(mesh.faces_list[i])
+
+            meshes_list.append(mesh)
+
+        return meshes_list
+
     def execute(self, context):
+
+        path = self.filepath
+        print("Export model to file: " + path)
+
+        self.getSelectedMeshes()
+
         return {'FINISHED'}
 
     def invoke(self, context, event):
+        self.filepath = "undefined" + self.filename_ext
+        context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
 #-------------------------------------------------------------------------------
