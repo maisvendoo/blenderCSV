@@ -26,19 +26,65 @@ class CSVLoader:
     def __init__(self):
         self.meshes_list.clear()
 
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
     def parseLine(self, line):
         tmp = line.rstrip('\n').rstrip('\r').rstrip(' ').split(",")
         return tmp
 
-    def triangulate(self, face):
-        faces = []
-        for i in range(1, len(face) - 1):
-            faces.append([face[0], face[i], face[i+1]])
+    # ---------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------
+    def createCube(self, command, mesh):
 
-        print(faces)
+        x = 0
+        y = 0
+        z = 0
 
-        return faces
+        try:
+            x = float(command[1])
+            y = float(command[2])
+            z = float(command[3])
+        except Exception as ex:
+            print(ex)
+            return
 
+        # Add vertices
+        v = (x, y, -z)
+        mesh.vertex_list.append(v)
+        v = (x, -y, -z)
+        mesh.vertex_list.append(v)
+        v = (-x, -y, -z)
+        mesh.vertex_list.append(v)
+        v = (-x, y, -z)
+        mesh.vertex_list.append(v)
+        v = (x, y, z)
+        mesh.vertex_list.append(v)
+        v = (x, -y, z)
+        mesh.vertex_list.append(v)
+        v = (-x, -y, z)
+        mesh.vertex_list.append(v)
+        v = (-x, y, z)
+        mesh.vertex_list.append(v)
+
+        # Add faces
+        face = (0, 1, 2, 3)
+        mesh.faces_list.append(face)
+        face = (0, 4, 5, 1)
+        mesh.faces_list.append(face)
+        face = (0, 3, 7, 4)
+        mesh.faces_list.append(face)
+        face = (6, 5, 4, 7)
+        mesh.faces_list.append(face)
+        face = (6, 7, 3, 2)
+        mesh.faces_list.append(face)
+        face = (6, 2, 1, 5)
+        mesh.faces_list.append(face)
+
+    # ---------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------
     def loadCSV(self, filePath):
 
         meshes_list = []
@@ -101,6 +147,9 @@ class CSVLoader:
                             print("ERROR!!! INVALID DATA")
 
                     mesh.faces_list.append(tuple(face))
+
+                if command[0] == "Cube":
+                    self.createCube(command, mesh)
 
             meshes_list.append(mesh)
 

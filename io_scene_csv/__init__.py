@@ -54,6 +54,7 @@ class CSVImporter(bpy.types.Operator):
 
             me = bpy.data.meshes.new(obj_name + str(m_idx))
             me.from_pydata(m.vertex_list, [], m.faces_list)
+            me.update(calc_edges=True)
 
             obj = bpy.data.objects.new(me.name, me)
             bpy.context.scene.objects.link(obj)
