@@ -83,12 +83,6 @@ class CSVLoader:
         face = (6, 2, 1, 5)
         mesh.faces_list.append(face)
 
-    def is_zero(self, x):
-        if (math.fabs(x) < 1e-4):
-            return 0
-        else:
-            return x
-
     # ---------------------------------------------------------------------------
     #
     # ---------------------------------------------------------------------------
@@ -141,9 +135,31 @@ class CSVLoader:
                 face.append(2*i + 1)
             mesh.faces_list.append(tuple(face))
 
-    # ---------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     #
-    # ---------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
+    def Translate(self, command, mesh):
+
+        try:
+            x = float(command[1])
+            y = float(command[2])
+            z = float(command[3])
+        except Exception as ex:
+            print(ex)
+            return
+
+        for i, v in enumerate(mesh.vertex_list):
+            tmp = list(v)
+            tmp[0] = tmp[0] + x
+            tmp[1] = tmp[1] + y
+            tmp[2] = tmp[2] + z
+            v = tuple(tmp)
+            mesh.vertex_list[i] = v
+
+
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
     def loadCSV(self, filePath):
 
         meshes_list = []
@@ -212,6 +228,9 @@ class CSVLoader:
 
                 if command[0] == "Cylinder":
                     self.createCylinder(command, mesh)
+
+                if command[0] == "Translate":
+                    self.Translate(command, mesh)
 
             meshes_list.append(mesh)
 
