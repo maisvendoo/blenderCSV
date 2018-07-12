@@ -5,6 +5,7 @@
 #       Developer: Dmitry Pritykin
 #
 #-------------------------------------------------------------------------------
+
 bl_info = {
     "name": "Importer OpenBVE CSV models",
     "category": "Import-Export",
@@ -14,7 +15,6 @@ bl_info = {
 }
 
 import bpy
-import bmesh
 import os
 
 #-------------------------------------------------------------------------------
@@ -53,7 +53,7 @@ class CSVImporter(bpy.types.Operator):
             obj_name = self.getFileName(path)
 
             me = bpy.data.meshes.new(obj_name + str(m_idx))
-            me.from_pydata(m.getVerticies(), [], m.getFaces())
+            me.from_pydata(m.vertex_list, [], m.faces_list)
 
             obj = bpy.data.objects.new(me.name, me)
             bpy.context.scene.objects.link(obj)
