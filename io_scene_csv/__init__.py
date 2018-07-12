@@ -109,7 +109,15 @@ class CSVExporter(bpy.types.Operator):
 
                 # Get faces
                 for i, face in enumerate(me.polygons):
-                    mesh.faces_list.append(list(face.vertices))
+
+                    # Convert to CSV vertex order
+                    tmp = list(face.vertices)
+                    csv_face = []
+                    csv_face.append(tmp[0])
+                    for j in range(len(tmp) - 1, 0, -1):
+                        csv_face.append(tmp[j])
+
+                    mesh.faces_list.append(csv_face)
                     print(mesh.faces_list[i])
 
             meshes_list.append(mesh)
@@ -121,7 +129,10 @@ class CSVExporter(bpy.types.Operator):
         path = self.filepath
         print("Export model to file: " + path)
 
-        self.getSelectedMeshes()
+        from .CSV import CSVLoader
+
+        exporter = CSVLoader()
+        exporter.export(path, self.getSelectedMeshes())
 
         return {'FINISHED'}
 
