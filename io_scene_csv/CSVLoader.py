@@ -156,6 +156,48 @@ class CSVLoader:
             v = tuple(tmp)
             mesh.vertex_list[i] = v
 
+    # ---------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------
+    def Rotate(self, command, mesh):
+        try:
+            ux = float(command[1])
+            uy = float(command[2])
+            uz = float(command[3])
+            angle = float(command[4]) * math.pi / 180.0
+
+            len = math.sqrt(ux * ux + uy * uy + uz * uz)
+
+            try:
+
+                # Normalize axis vector
+                ex = ux / len
+                ey = uy / len
+                ez = uz / len
+
+                for i, v in enumerate(mesh.vertex_list):
+                    tmp = list(v)
+
+                    c = ex * tmp[0] + ey * tmp[1] + ez * tmp[2]
+
+                    nx = ez * tmp[1] - ey * tmp[2]
+                    ny = ex * tmp[2] - ez * tmp[0]
+                    nz = ey * tmp[0] - ex * tmp[1]
+
+                    tmp[0] = round(c * (1 - math.cos(angle)) * ex + nx * math.sin(angle) + tmp[0] * math.cos(angle), 4)
+                    tmp[1] = round(c * (1 - math.cos(angle)) * ey + ny * math.sin(angle) + tmp[1] * math.cos(angle), 4)
+                    tmp[2] = round(c * (1 - math.cos(angle)) * ez + nz * math.sin(angle) + tmp[2] * math.cos(angle), 4)
+                    v = tuple(tmp)
+                    mesh.vertex_list[i] = v
+
+            except Exception as ex:
+                print(ex)
+                return
+
+        except Exception as ex:
+            print(ex)
+            return
+
 
     #---------------------------------------------------------------------------
     #
@@ -231,6 +273,9 @@ class CSVLoader:
 
                 if command[0] == "Translate":
                     self.Translate(command, mesh)
+
+                if command[0] == "Rotate":
+                    self.Rotate(command, mesh)
 
             meshes_list.append(mesh)
 
