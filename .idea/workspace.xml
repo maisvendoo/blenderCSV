@@ -31,8 +31,8 @@
       <file leaf-file-name="CSVLoader.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/io_scene_csv/CSVLoader.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="512">
-              <caret line="398" column="38" selection-start-line="398" selection-start-column="38" selection-end-line="398" selection-end-column="38" />
+            <state relative-caret-position="444">
+              <caret line="379" column="56" selection-start-line="379" selection-start-column="56" selection-end-line="379" selection-end-column="56" />
             </state>
           </provider>
         </entry>
@@ -356,8 +356,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/io_scene_csv/CSVLoader.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="512">
-          <caret line="398" column="38" selection-start-line="398" selection-start-column="38" selection-end-line="398" selection-end-column="38" />
+        <state relative-caret-position="444">
+          <caret line="379" column="56" selection-start-line="379" selection-start-column="56" selection-end-line="379" selection-end-column="56" />
         </state>
       </provider>
     </entry>

@@ -349,7 +349,7 @@ class CSVLoader:
                     except ValueError:
                         pass
 
-                if command[0] == "AddFace" or command[0] == "AddFace2":
+                if command[0] == "AddFace":
                     face = []
                     for i in range(1, len(command)):
                         try:
@@ -360,30 +360,57 @@ class CSVLoader:
 
                     mesh.faces_list.append(tuple(face))
 
+                if command[0] == "AddFace2":
+                    face1 = []
+                    for i in range(1, len(command)):
+                        try:
+                            v = int(command[i])
+                            face1.append(v)
+                        except ValueError:
+                            print("ERROR!!! INVALID DATA")
+
+                    mesh.faces_list.append(tuple(face1))
+
+                    face2 = []
+                    face2.append(face1[0])
+
+                    for i in range(len(face1) - 1, 0, -1):
+                        face2.append(face1[i])
+
+                    mesh.faces_list.append(tuple(face2))
+
+                # Create cube
                 if command[0] == "Cube":
                     self.createCube(command, mesh)
 
+                # Create cylinder
                 if command[0] == "Cylinder":
                     self.createCylinder(command, mesh)
 
+                # Translate mesh
                 if command[0] == "Translate":
                     self.Translate(command, mesh)
 
+                # Rotate mesh
                 if command[0] == "Rotate":
                     self.Rotate(command, mesh)
 
+                # Translate current mesh and all previos meshes
                 if command[0] == "TranslateAll":
                     self.TranslateAll(command, meshes_list, mesh)
 
+                # Rotate cureent mesh and all previos meshes
                 if command[0] == "RotateAll":
                     self.RotateAll(command, meshes_list, mesh)
 
+                # Scale meshes
                 if command[0] == "Scale":
                     self.Scale(command, mesh)
 
                 if command[0] == "ScaleAll":
                     self.ScaleAll(command, mesh)
 
+                # Mirror meshes
                 if command[0] == "Mirror":
                     self.Mirror(command, mesh)
 
@@ -396,6 +423,7 @@ class CSVLoader:
             print("v:" + str(len(m.vertex_list)) + "," +
                   "f:" + str(len(m.faces_list)))
 
+        # Convertion to Blender basis
         self.toRightBasis(meshes_list)
 
         return meshes_list
