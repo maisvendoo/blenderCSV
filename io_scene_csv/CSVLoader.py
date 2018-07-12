@@ -210,14 +210,89 @@ class CSVLoader:
             print(ex)
             return
 
-    # ---------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     #
-    # ---------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     def RotateAll(self, command, meshes_list, mesh):
         for m in meshes_list:
             self.Rotate(command, m)
 
         self.Rotate(command, mesh)
+
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
+    def Scale(self, command, mesh):
+        try:
+            sx = float(command[1])
+            sy = float(command[2])
+            sz = float(command[3])
+        except Exception as ex:
+            print(ex)
+            return
+
+        for i, v in enumerate(mesh.vertex_list):
+            tmp = list(v)
+            tmp[0] = sx * tmp[0]
+            tmp[1] = sy * tmp[1]
+            tmp[2] = sx * tmp[2]
+            v = tuple(tmp)
+            mesh.vertex_list[i] = v
+
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
+    def ScaleAll(self, command, meshes_list, mesh):
+        for m in meshes_list:
+            self.Scale(command, m)
+
+        self.Scale(command, mesh)
+
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
+    def Mirror(self, command, mesh):
+        try:
+            mx = int(command[1])
+            my = int(command[2])
+            mz = int(command[3])
+        except Exception as ex:
+            print(ex)
+            return
+
+        for i, v in enumerate(mesh.vertex_list):
+            tmp = list(v)
+
+            if mx != 0:
+                tmp[0] = -tmp[0]
+
+            if my != 0:
+                tmp[1] = -tmp[1]
+
+            if mz != 0:
+                tmp[2] = -tmp[2]
+
+            v = tuple(tmp)
+            mesh.vertex_list[i] = v
+
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
+    def MirrorAll(self, command, meshes_list, mesh):
+        for m in meshes_list:
+            self.Mirror(command, m)
+
+        self.Mirror(command, mesh)
+
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
+    def toRightBasis(self, meshes_list):
+        for m in meshes_list:
+            command = [None, '0', '0', '1']
+            self.Mirror(command, m)
+            command = [None, '1', '0', '0', '90']
+            self.Rotate(command, m)
 
     #---------------------------------------------------------------------------
     #
@@ -303,10 +378,24 @@ class CSVLoader:
                 if command[0] == "RotateAll":
                     self.RotateAll(command, meshes_list, mesh)
 
+                if command[0] == "Scale":
+                    self.Scale(command, mesh)
+
+                if command[0] == "ScaleAll":
+                    self.ScaleAll(command, mesh)
+
+                if command[0] == "Mirror":
+                    self.Mirror(command, mesh)
+
+                if command[0] == "MirrorAll":
+                    self.MirrorAll(command, mesh)
+
             meshes_list.append(mesh)
 
         for m in meshes_list:
             print("v:" + str(len(m.vertex_list)) + "," +
                   "f:" + str(len(m.faces_list)))
+
+        self.toRightBasis(meshes_list)
 
         return meshes_list

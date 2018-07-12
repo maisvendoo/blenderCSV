@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d1871ea3-b685-46c9-b8af-cb79549c3712" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/io_scene_csv/CSVLoader.py" beforeDir="false" afterPath="$PROJECT_DIR$/io_scene_csv/CSVLoader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/io_scene_csv/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/io_scene_csv/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/io_scene_csv/debug.py" beforeDir="false" afterPath="$PROJECT_DIR$/io_scene_csv/debug.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -31,16 +28,16 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="CSVLoader.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="CSVLoader.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/io_scene_csv/CSVLoader.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="104">
-              <caret line="112" column="34" lean-forward="true" selection-start-line="112" selection-start-column="34" selection-end-line="112" selection-end-column="34" />
+            <state relative-caret-position="512">
+              <caret line="398" column="38" selection-start-line="398" selection-start-column="38" selection-end-line="398" selection-end-column="38" />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="__init__.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="__init__.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/io_scene_csv/__init__.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="119">
@@ -72,8 +69,8 @@
         <option value="$PROJECT_DIR$/src/CSVLoader.py" />
         <option value="$PROJECT_DIR$/src/__init__.py" />
         <option value="$PROJECT_DIR$/io_scene_csv/debug.py" />
-        <option value="$PROJECT_DIR$/io_scene_csv/CSVLoader.py" />
         <option value="$PROJECT_DIR$/io_scene_csv/__init__.py" />
+        <option value="$PROJECT_DIR$/io_scene_csv/CSVLoader.py" />
       </list>
     </option>
   </component>
@@ -347,13 +344,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/io_scene_csv/CSVLoader.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="104">
-          <caret line="112" column="34" lean-forward="true" selection-start-line="112" selection-start-column="34" selection-end-line="112" selection-end-column="34" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/io_scene_csv/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="119">
@@ -361,6 +351,13 @@
           <folding>
             <element signature="e#488#498#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/io_scene_csv/CSVLoader.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="512">
+          <caret line="398" column="38" selection-start-line="398" selection-start-column="38" selection-end-line="398" selection-end-column="38" />
         </state>
       </provider>
     </entry>
