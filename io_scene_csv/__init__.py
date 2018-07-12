@@ -5,7 +5,7 @@
 #       Developer: Dmitry Pritykin
 #
 #-------------------------------------------------------------------------------
-'''
+
 bl_info = {
     "name": "Importer OpenBVE CSV models",
     "category": "Import-Export",
@@ -54,7 +54,7 @@ class CSVImporter(bpy.types.Operator):
 
             me = bpy.data.meshes.new(obj_name + str(m_idx))
             me.from_pydata(m.vertex_list, [], m.faces_list)
-            me.update(calc_edges=True)
+            #me.update(calc_edges=True)
 
             obj = bpy.data.objects.new(me.name, me)
             bpy.context.scene.objects.link(obj)
@@ -95,4 +95,3 @@ def unregister():
 #-------------------------------------------------------------------------------
 if __name__ == "__main__":
     register()
-'''

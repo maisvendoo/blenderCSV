@@ -104,24 +104,25 @@ class CSVLoader:
 
         # Vertices generation
         for i in range(0, n):
-            x = round(r1 * math.cos(2 * math.pi * i / n), 4)
+            x = round(r1 * math.cos(2 * math.pi * i / n), 6)
             y = round(h / 2.0, 4)
-            z = round(r1 * math.sin(2 * math.pi * i / n), 4)
+            z = round(r1 * math.sin(2 * math.pi * i / n), 6)
             mesh.vertex_list.append((x, y, z))
 
-            x = round(r2 * math.cos(2 * math.pi * i / n), 4)
+            x = round(r2 * math.cos(2 * math.pi * i / n), 6)
             y = round(-h / 2.0, 4)
-            z = round(r2 * math.sin(2 * math.pi * i / n), 4)
+            z = round(r2 * math.sin(2 * math.pi * i / n), 6)
             mesh.vertex_list.append((x, y, z))
 
         # Side faces generation
-        for i in range(0, n):
+        for i in range(0, n - 1):
             face = (2 * (i + 1), 2 * (i + 1) + 1, 2 * (i + 1) - 1, 2 * i)
             mesh.faces_list.append(face)
 
         mesh.faces_list.append((0, 1, 2 * n - 1, 2 * n - 2))
 
         # Lower face generation
+
         if r2 > 0:
             face = []
             for i in range(n-1, -1, -1):
@@ -156,6 +157,16 @@ class CSVLoader:
             v = tuple(tmp)
             mesh.vertex_list[i] = v
 
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
+    def TranslateAll(self, command, meshes_list, mesh):
+        for m in meshes_list:
+            self.Translate(command, m)
+
+        self.Translate(command, mesh)
+
+
     # ---------------------------------------------------------------------------
     #
     # ---------------------------------------------------------------------------
@@ -164,7 +175,7 @@ class CSVLoader:
             ux = float(command[1])
             uy = float(command[2])
             uz = float(command[3])
-            angle = float(command[4]) * math.pi / 180.0
+            angle = -float(command[4]) * math.pi / 180.0
 
             len = math.sqrt(ux * ux + uy * uy + uz * uz)
 
@@ -175,6 +186,7 @@ class CSVLoader:
                 ey = uy / len
                 ez = uz / len
 
+                # Rotate vertex by Rodrigue's formula
                 for i, v in enumerate(mesh.vertex_list):
                     tmp = list(v)
 
@@ -198,6 +210,14 @@ class CSVLoader:
             print(ex)
             return
 
+    # ---------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------
+    def RotateAll(self, command, meshes_list, mesh):
+        for m in meshes_list:
+            self.Rotate(command, m)
+
+        self.Rotate(command, mesh)
 
     #---------------------------------------------------------------------------
     #
@@ -276,6 +296,12 @@ class CSVLoader:
 
                 if command[0] == "Rotate":
                     self.Rotate(command, mesh)
+
+                if command[0] == "TranslateAll":
+                    self.TranslateAll(command, meshes_list, mesh)
+
+                if command[0] == "RotateAll":
+                    self.RotateAll(command, meshes_list, mesh)
 
             meshes_list.append(mesh)
 
