@@ -69,42 +69,59 @@ class CSVLoader:
         csv_text = f.read().split('\n')
         f.close()
 
-        # Create add meshes in list
+        # Find first mesh
+        idx = 0
+        mesh_begin_idx = list()
+
         for line in csv_text:
             command = self.parseLine(line)
             if command[0] == "CreateMeshBuilder":
-                import copy
-                mesh = CSVmesh()
-                print(mesh)
-                meshes_list.append(copy.deepcopy(mesh))
+               mesh_begin_idx.append(idx)
+            idx = idx + 1
 
-        m_idx = -1
-        for line in csv_text:
-            command = self.parseLine(line)
+        print(mesh_begin_idx)
 
-            if command[0] == "CreateMeshBuilder":
-                m_idx = m_idx + 1
+        for idx in range(0, len(mesh_begin_idx)):
 
-            if command[0] == "AddVertex":
-                try:
-                    x = float(command[1])
-                    y = float(command[2])
-                    z = float(command[3])
-                    vertex = (x, y, z)
-                    meshes_list[m_idx].addVertex(vertex)
-                except ValueError:
-                    pass
+            print(idx)
+            mesh = CSVmesh()
 
-            if command[0] == "AddFace" or command[0] == "AddFace2":
-                face = []
-                for i in range(1, len(command)):
+            a = mesh_begin_idx[idx]
+
+            if idx + 1 >= len(mesh_begin_idx):
+                b = len(csv_text)
+            else:
+                b = mesh_begin_idx[idx+1]
+
+            for j in range(a, b):
+
+                print(j)
+
+                command = self.parseLine(csv_text[j])
+
+                if command[0] == "AddVertex":
                     try:
-                        v = int(command[i])
-                        face.append(v)
+                        x = float(command[1])
+                        y = float(command[2])
+                        z = float(command[3])
+                        vertex = (x, y, z)
+                        mesh.addVertex(vertex)
                     except ValueError:
-                        print("ERROR!!! INVALID DATA")
+                        pass
 
-                meshes_list[m_idx].addFace(tuple(face))
+                if command[0] == "AddFace" or command[0] == "AddFace2":
+                    face = []
+                    for i in range(1, len(command)):
+                        try:
+                            v = int(command[i])
+                            face.append(v)
+                        except ValueError:
+                            print("ERROR!!! INVALID DATA")
+
+                    mesh.addFace(tuple(face))
+
+
+            meshes_list.append(mesh)
 
         for m in meshes_list:
             print("v:" + str(len(m.getVerticies())) + "," +
