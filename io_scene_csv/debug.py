@@ -2,7 +2,7 @@ from io_scene_csv import CSVLoader
 
 def load():
     loader = CSVLoader.CSVLoader()
-    meshes_list = loader.loadCSV("C:/Users/maisvendoo/cube.csv")
+    meshes_list = loader.loadCSV("C:/Users/maisvendoo/GroundChannel.csv")
 
     for m in meshes_list:
         print(m)

@@ -356,7 +356,8 @@ class CSVLoader:
                             v = int(command[i])
                             face.append(v)
                         except ValueError:
-                            print("ERROR!!! INVALID DATA")
+                            print("ERROR: invalid data in string: " + str(j) +
+                                  " argument: " + command[i])
 
                     mesh.faces_list.append(tuple(face))
 
