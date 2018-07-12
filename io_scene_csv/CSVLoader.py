@@ -44,7 +44,12 @@ class CSVLoader:
         meshes_list = []
 
         # Open CSV file
-        f = open(filePath, 'r')
+        try:
+            f = open(filePath, 'rt')
+        except Exception as ex:
+            print(ex)
+            return meshes_list
+
         # Create temporary mesh
 
         # Read all file
@@ -61,11 +66,8 @@ class CSVLoader:
                mesh_begin_idx.append(idx)
             idx = idx + 1
 
-        print(mesh_begin_idx)
-
         for idx in range(0, len(mesh_begin_idx)):
 
-            print(idx)
             mesh = CSVmesh()
 
             a = mesh_begin_idx[idx]
@@ -76,8 +78,6 @@ class CSVLoader:
                 b = mesh_begin_idx[idx+1]
 
             for j in range(a, b):
-
-                print(j)
 
                 command = self.parseLine(csv_text[j])
 
