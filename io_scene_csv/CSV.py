@@ -566,6 +566,8 @@ class CSVLoader:
 
         # Conversion to left basis
         self.toLeftBasis(meshes_list)
+        # Transform UV coordinates
+        self.transformUV(meshes_list)
         # Generate mesh
         self.generateModel(csv_text, meshes_list)
 
