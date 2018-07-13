@@ -86,12 +86,15 @@ class CSVExporter(bpy.types.Operator):
 
     filepath = bpy.props.StringProperty(subtype="FILE_PATH")
 
-    def addFaceToMesh(self, md, f, mesh):
+    def addFaceToMesh(self, obj, md, f, mesh):
 
         face = []
 
         for i, v in enumerate(f.vertices):
-            vertex = list(md.vertices[v].co)
+            loc_vert = md.vertices[v].co
+            matrix = obj.matrix_world
+            glob_vert = matrix * loc_vert
+            vertex = list(glob_vert)
 
             uv_map = []
             for loop_idx in f.loop_indices:
@@ -154,7 +157,7 @@ class CSVExporter(bpy.types.Operator):
                     for f in md.polygons:
                         mesh.diffuse_color = [255, 255, 255, 255]
                         mesh.name = "Mesh: " + obj.name + " Material: None"
-                        self.addFaceToMesh(md, f, mesh)
+                        self.addFaceToMesh(obj, md, f, mesh)
 
                     meshes_list.append(mesh)
                 else:
@@ -189,7 +192,7 @@ class CSVExporter(bpy.types.Operator):
                             pass
 
                         for f in faces:
-                            self.addFaceToMesh(md, f, mesh)
+                            self.addFaceToMesh(obj, md, f, mesh)
 
                         meshes_list.append(mesh)
 

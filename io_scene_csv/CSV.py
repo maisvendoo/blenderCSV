@@ -488,7 +488,7 @@ class CSVLoader:
                     setTextureCoordinates = "SetTextureCoordinates, "
                     setTextureCoordinates = setTextureCoordinates + str(int(tc[0])) + "," + str(round(tc[1], 3)) + "," + str(round(1 - tc[2])) + ","
                     csv_text.append(setTextureCoordinates + "\n")
-                    
+
 
     #---------------------------------------------------------------------------
     #
