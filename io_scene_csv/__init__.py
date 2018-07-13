@@ -86,6 +86,32 @@ class CSVExporter(bpy.types.Operator):
 
     filepath = bpy.props.StringProperty(subtype="FILE_PATH")
 
+    def addFaceToMesh(self, md, f, mesh):
+
+        face = []
+
+        for i, v in enumerate(f.vertices):
+            vertex = list(md.vertices[v].co)
+
+            if not (vertex in mesh.vertex_list):
+                mesh.vertex_list.append(vertex)
+                print("Append vertex: ", vertex)
+                face.append(len(mesh.vertex_list) - 1)
+            else:
+                face.append(mesh.vertex_list.index(vertex))
+
+        csv_face = []
+        csv_face.append(face[0])
+
+        for i in range(len(face) - 1, 0, -1):
+            csv_face.append(face[i])
+
+        print("Append Face: ", csv_face)
+        mesh.faces_list.append(csv_face)
+
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
     def getSelectedMeshes(self):
         objs = bpy.context.selected_objects
 
@@ -96,33 +122,47 @@ class CSVExporter(bpy.types.Operator):
 
                 # CSV mesh creation
                 from .CSV import CSVmesh
-                mesh = CSVmesh()
 
                 print("Process object: " + obj.name)
 
                 # Get mesh data from object
-                me = obj.data
-                # Get verticies
-                for i, v in enumerate(me.vertices):
-                    mesh.vertex_list.append(list(v.co))
-                    print(mesh.vertex_list[i])
+                md = obj.data
 
-                # Get faces
-                for i, face in enumerate(me.polygons):
+                csv_meshes = {}
+                for f in md.polygons:
+                    csv_meshes[f.material_index] = []
 
-                    # Convert to CSV vertex order
-                    tmp = list(face.vertices)
-                    csv_face = []
-                    csv_face.append(tmp[0])
-                    for j in range(len(tmp) - 1, 0, -1):
-                        csv_face.append(tmp[j])
+                print(csv_meshes)
 
-                    mesh.faces_list.append(csv_face)
-                    print(mesh.faces_list[i])
+                if len(csv_meshes) == 0:
+                    # Single mesh without material
+                    mesh = CSVmesh()
 
+                    for f in md.polygons:
+                        mesh.diffuse_color = [255, 255, 255, 255]
+                        mesh.name = "Mesh: " + obj.name + " Material: None"
+                        self.addFaceToMesh(md, f, mesh)
 
+                    meshes_list.append(mesh)
+                else:
+                    for f in md.polygons:
+                        csv_meshes[f.material_index].append(f)
 
-            meshes_list.append(mesh)
+                    for key, faces in csv_meshes.items():
+
+                        mat = obj.material_slots[key].material
+
+                        mesh = CSVmesh()
+                        mesh.name = "Mesh: " + obj.name + " Material: " + mat.name
+
+                        for c in mat.diffuse_color:
+                            mesh.diffuse_color.append(round(c * 255))
+
+                        for f in faces:
+                            self.addFaceToMesh(md, f, mesh)
+
+                        meshes_list.append(mesh)
+
 
         return meshes_list
 

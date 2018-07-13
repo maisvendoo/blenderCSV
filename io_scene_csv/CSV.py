@@ -13,11 +13,12 @@ import math
 class CSVmesh:
 
     def __init__(self):
+        self.name = ""
         self.vertex_list = []
         self.faces_list = []
         self.texcoords_list = []
         self.texture_file = ""
-        self.deffuse_color = []
+        self.diffuse_color = []
 
 #-------------------------------------------------------------------------------
 #
@@ -449,6 +450,7 @@ class CSVLoader:
         for mesh in meshes_list:
 
             # New mesh
+            csv_text.append("\n; " + mesh.name + "\n")
             csv_text.append("CreateMeshBuilder,\n")
 
             # Vertices
@@ -469,6 +471,14 @@ class CSVLoader:
                     addFace = addFace + str(v_idx) + ", "
                 csv_text.append(addFace + "\n")
 
+            csv_text.append("\n")
+
+            # Diffuse color
+            setColor = "SetColor, "
+            for c in mesh.diffuse_color:
+                setColor = setColor + str(c) + ","
+            csv_text.append(setColor + "\n")
+
     #---------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------
@@ -478,7 +488,6 @@ class CSVLoader:
         csv_text.append(";------------------------------------------------------\n")
         csv_text.append("; CSV exporter from Blender, RGUPS, Dmitry Pritykin\n")
         csv_text.append(";------------------------------------------------------\n")
-        csv_text.append("\n")
 
         # Conversion to left basis
         self.toLeftBasis(meshes_list)
