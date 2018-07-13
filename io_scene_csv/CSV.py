@@ -316,6 +316,35 @@ class CSVLoader:
     #---------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------
+    def loadTexture(self, command, mesh):
+        mesh.texture_file = command[1].replace(" ", "")
+
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
+    def setColor(self, command, mesh):
+        for i in range(1, len(command)):
+            try:
+                mesh.diffuse_color.append(int(command[i]))
+            except:
+                mesh.diffuse_color.append(255)
+
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
+    def setTextureCoordinates(self, command, mesh):
+        try:
+            v_idx = int(command[1])
+            tx = float(command[2])
+            ty = float(command[3])
+
+            mesh.texcoords_list.append([v_idx, tx, ty])
+        except:
+            return
+
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
     def loadCSV(self, filePath):
 
         meshes_list = []
@@ -436,6 +465,15 @@ class CSVLoader:
 
                 if self.checkCmd(command[0], "MirrorAll"):
                     self.MirrorAll(command, mesh)
+
+                if self.checkCmd(command[0], "LoadTexture"):
+                    self.loadTexture(command, mesh)
+
+                if self.checkCmd(command[0], "SetColor"):
+                    self.setColor(command, mesh)
+
+                if self.checkCmd(command[0], "SetTextureCoordinates"):
+                    self.setTextureCoordinates(command, mesh)
 
             meshes_list.append(mesh)
 

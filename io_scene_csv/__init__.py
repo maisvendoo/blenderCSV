@@ -28,12 +28,50 @@ class CSVImporter(bpy.types.Operator):
 
     filepath = bpy.props.StringProperty(subtype="FILE_PATH")
 
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
     def getFileName(self, path):
         basename = os.path.basename(path)
         tmp = basename.split(".")
         return tmp[0]
 
+    def createMaterial(self, md, mesh):
+
+        # Create new material for object
+        if mesh.texture_file != "":
+            matName = self.getFileName(mesh.texture_file)
+        else:
+            matName = md.name;
+
+        mat = bpy.data.materials.get(matName)
+
+        if mat is None:
+            mat = bpy.data.materials.new(name=matName)
+
+        if md.materials:
+            md.materials[0] = mat
+        else:
+            md.materials.append(mat)
+
+        if mesh.texture_file != "":
+
+            modelDir = os.path.dirname(self.filepath)
+            texImgPath = modelDir + os.path.sep + mesh.texture_file
+            print(texImgPath)
+            img = bpy.data.images.load(texImgPath)
+
+            tex = bpy.data.textures.new("tex" + mat.name, 'IMAGE')
+            tex.image = img
+            slot = mat.texture_slots.add()
+            slot.texture = tex
+            slot.texture_coords = 'UV'
+            slot.uv_layer = 'default'
+
+
+    #---------------------------------------------------------------------------
     # Action by menu item selection
+    #---------------------------------------------------------------------------
     def execute(self, context):
 
         path = self.filepath
@@ -57,6 +95,9 @@ class CSVImporter(bpy.types.Operator):
             me = bpy.data.meshes.new(obj_name + "-" + str(m_idx))
             me.from_pydata(m.vertex_list, [], m.faces_list)
             me.update(calc_edges=True)
+
+            # Material creation
+            self.createMaterial(me, m)
 
             # Create object and link it to scene
             obj = bpy.data.objects.new(me.name, me)
