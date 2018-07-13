@@ -19,6 +19,7 @@ class CSVmesh:
         self.texcoords_list = []
         self.texture_file = ""
         self.diffuse_color = []
+        self.ty_max = 1
 
 #-------------------------------------------------------------------------------
 #
@@ -345,6 +346,20 @@ class CSVLoader:
     #---------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------
+    def transformUV(self, meshes_list):
+
+        for m in meshes_list:
+            for tc in m.texcoords_list:
+                if tc[2] > m.ty_max:
+                    m.ty_max = tc[2]
+
+            for i, tc in enumerate(m.texcoords_list):
+                tc[2] = m.ty_max - tc[2]
+                m.texcoords_list[i] = tc
+
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
     def loadCSV(self, filePath):
 
         meshes_list = []
@@ -484,6 +499,9 @@ class CSVLoader:
         # Convertion to Blender basis
         self.toRightBasis(meshes_list)
 
+        # Transform texture coordinates to blender format
+        self.transformUV(meshes_list)
+
         return meshes_list
 
     #---------------------------------------------------------------------------
@@ -529,9 +547,8 @@ class CSVLoader:
 
                 for tc in mesh.texcoords_list:
                     setTextureCoordinates = "SetTextureCoordinates, "
-                    setTextureCoordinates = setTextureCoordinates + str(int(tc[0])) + "," + str(round(tc[1], 3)) + "," + str(round(1 - tc[2])) + ","
+                    setTextureCoordinates = setTextureCoordinates + str(int(tc[0])) + "," + str(round(tc[1], 3)) + "," + str(round(tc[2], 3)) + ","
                     csv_text.append(setTextureCoordinates + "\n")
-
 
     #---------------------------------------------------------------------------
     #

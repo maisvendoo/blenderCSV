@@ -85,8 +85,10 @@ class CSVImporter(bpy.types.Operator):
                 try:
                     tmp = mesh.texcoords_list[v.index]
                     print(tmp)
+
                     luv.uv[0] = tmp[1]
                     luv.uv[1] = tmp[2]
+
                 except Exception as ex:
                     pass
 
