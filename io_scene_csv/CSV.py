@@ -297,6 +297,16 @@ class CSVLoader:
     #---------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------
+    def toLeftBasis(self, meshes_list):
+        for m in meshes_list:
+            command = [None, '0', '0', '1']
+            self.Mirror(command, m)
+            command = [None, '1', '0', '0', '-90']
+            self.Rotate(command, m)
+
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
     def loadCSV(self, filePath):
 
         meshes_list = []
@@ -356,7 +366,8 @@ class CSVLoader:
                             v = int(command[i])
                             face.append(v)
                         except ValueError:
-                            print("ERROR!!! INVALID DATA")
+                            print("ERROR: invalid data in string: " + str(j) +
+                                  " argument: " + command[i])
 
                     mesh.faces_list.append(tuple(face))
 
@@ -427,3 +438,58 @@ class CSVLoader:
         self.toRightBasis(meshes_list)
 
         return meshes_list
+
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
+    def generateModel(self, csv_text, meshes_list):
+        for mesh in meshes_list:
+
+            # New mesh
+            csv_text.append("CreateMeshBuilder,\n")
+
+            # Vertices
+            for v in mesh.vertex_list:
+
+                addVertex = "AddVertex, "
+                for coord in v:
+                    addVertex = addVertex + str(coord) + ", "
+                csv_text.append(addVertex + "\n")
+
+            csv_text.append("\n")
+
+            # Faces
+            for face in mesh.faces_list:
+
+                addFace = "AddFace, "
+                for v_idx in face:
+                    addFace = addFace + str(v_idx) + ", "
+                csv_text.append(addFace + "\n")
+
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
+    def export(self, path, meshes_list):
+
+        csv_text = []
+        csv_text.append(";------------------------------------------------------\n")
+        csv_text.append("; CSV exporter from Blender, RGUPS, Dmitry Pritykin\n")
+        csv_text.append(";------------------------------------------------------\n")
+        csv_text.append("\n")
+
+        # Conversion to left basis
+        self.toLeftBasis(meshes_list)
+        # Generate mesh
+        self.generateModel(csv_text, meshes_list)
+
+        try:
+
+            # Output in file
+            f = open(path, "wt", encoding="utf-8")
+            f.writelines(csv_text)
+            f.close()
+
+        except Exception as ex:
+            print(ex)
+            return
+
