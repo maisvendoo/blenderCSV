@@ -93,18 +93,31 @@ class CSVExporter(bpy.types.Operator):
         for i, v in enumerate(f.vertices):
             vertex = list(md.vertices[v].co)
 
+            uv_map = []
+            for loop_idx in f.loop_indices:
+                uv_coords = md.uv_layers.active.data[loop_idx].uv
+                uv_map.append(uv_coords)
+
+            #print(list(uv_map))
+
+            v_idx = -1
+
             if not (vertex in mesh.vertex_list):
                 mesh.vertex_list.append(vertex)
                 print("Append vertex: ", vertex)
-                face.append(len(mesh.vertex_list) - 1)
+                v_idx = len(mesh.vertex_list) - 1
+                face.append(v_idx)
             else:
-                face.append(mesh.vertex_list.index(vertex))
+                v_idx = mesh.vertex_list.index(vertex)
+                face.append(v_idx)
 
         csv_face = []
         csv_face.append(face[0])
+        mesh.texcoords_list.append([face[0], uv_map[0].x, uv_map[0].y])
 
         for i in range(len(face) - 1, 0, -1):
             csv_face.append(face[i])
+            mesh.texcoords_list.append([face[i], uv_map[i].x, uv_map[i].y])
 
         print("Append Face: ", csv_face)
         mesh.faces_list.append(csv_face)
@@ -145,6 +158,8 @@ class CSVExporter(bpy.types.Operator):
 
                     meshes_list.append(mesh)
                 else:
+
+                    # Create mesh for each faces sets with same material
                     for f in md.polygons:
                         csv_meshes[f.material_index].append(f)
 
@@ -157,6 +172,21 @@ class CSVExporter(bpy.types.Operator):
 
                         for c in mat.diffuse_color:
                             mesh.diffuse_color.append(round(c * 255))
+
+                        texture_idx = mat.active_texture_index
+                        try:
+                            texture_path = mat.texture_slots[texture_idx].texture.image.filepath
+                            mesh.texture_file = texture_path
+
+                            modelDir = os.path.dirname(self.filepath)
+                            relPath = os.path.relpath(texture_path, modelDir)
+
+                            print("Texture path: ", relPath)
+
+                            mesh.texture_file = relPath
+
+                        except Exception as ex:
+                            pass
 
                         for f in faces:
                             self.addFaceToMesh(md, f, mesh)

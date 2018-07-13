@@ -479,6 +479,17 @@ class CSVLoader:
                 setColor = setColor + str(c) + ","
             csv_text.append(setColor + "\n")
 
+            # Texture
+            if mesh.texture_file != "":
+                loadTexture = "LoadTexture, " + mesh.texture_file
+                csv_text.append(loadTexture + "\n")
+
+                for tc in mesh.texcoords_list:
+                    setTextureCoordinates = "SetTextureCoordinates, "
+                    setTextureCoordinates = setTextureCoordinates + str(int(tc[0])) + "," + str(round(tc[1], 3)) + "," + str(round(1 - tc[2])) + ","
+                    csv_text.append(setTextureCoordinates + "\n")
+                    
+
     #---------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------
