@@ -16,6 +16,8 @@ class CSVmesh:
         self.vertex_list = []
         self.faces_list = []
         self.texcoords_list = []
+        self.texture_file = ""
+        self.deffuse_color = []
 
 #-------------------------------------------------------------------------------
 #

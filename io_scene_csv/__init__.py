@@ -120,6 +120,8 @@ class CSVExporter(bpy.types.Operator):
                     mesh.faces_list.append(csv_face)
                     print(mesh.faces_list[i])
 
+
+
             meshes_list.append(mesh)
 
         return meshes_list
