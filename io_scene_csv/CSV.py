@@ -307,6 +307,11 @@ class CSVLoader:
             command = [None, '0', '0', '1']
             self.Mirror(command, m)
 
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
+    def checkCmd(self, cmd, patern):
+        return cmd.upper().lower() == patern.upper().lower()
 
     #---------------------------------------------------------------------------
     #
@@ -332,11 +337,11 @@ class CSVLoader:
         idx = 0
         mesh_begin_idx = []
 
-        for line in csv_text:
+        for idx, line in enumerate(csv_text):
             command = self.parseLine(line)
-            if command[0] == "CreateMeshBuilder":
+            if self.checkCmd(command[0], "CreateMeshBuilder"):
                mesh_begin_idx.append(idx)
-            idx = idx + 1
+
 
         for idx in range(0, len(mesh_begin_idx)):
 
@@ -353,7 +358,7 @@ class CSVLoader:
 
                 command = self.parseLine(csv_text[j])
 
-                if command[0] == "AddVertex":
+                if self.checkCmd(command[0], "AddVertex"):
                     try:
                         x = float(command[1])
                         y = float(command[2])
@@ -363,7 +368,7 @@ class CSVLoader:
                     except ValueError:
                         pass
 
-                if command[0] == "AddFace":
+                if self.checkCmd(command[0], "AddFace"):
                     face = []
                     for i in range(1, len(command)):
                         try:
@@ -375,7 +380,7 @@ class CSVLoader:
 
                     mesh.faces_list.append(tuple(face))
 
-                if command[0] == "AddFace2":
+                if self.checkCmd(command[0], "AddFace2"):
                     face1 = []
                     for i in range(1, len(command)):
                         try:
@@ -395,41 +400,41 @@ class CSVLoader:
                     mesh.faces_list.append(tuple(face2))
 
                 # Create cube
-                if command[0] == "Cube":
+                if self.checkCmd(command[0], "Cube"):
                     self.createCube(command, mesh)
 
                 # Create cylinder
-                if command[0] == "Cylinder":
+                if self.checkCmd(command[0], "Cylinder"):
                     self.createCylinder(command, mesh)
 
                 # Translate mesh
-                if command[0] == "Translate":
+                if self.checkCmd(command[0], "Translate"):
                     self.Translate(command, mesh)
 
                 # Rotate mesh
-                if command[0] == "Rotate":
+                if self.checkCmd(command[0], "Rotate"):
                     self.Rotate(command, mesh)
 
                 # Translate current mesh and all previos meshes
-                if command[0] == "TranslateAll":
+                if self.checkCmd(command[0], "TranslateAll"):
                     self.TranslateAll(command, meshes_list, mesh)
 
                 # Rotate cureent mesh and all previos meshes
-                if command[0] == "RotateAll":
+                if self.checkCmd(command[0], "RotateAll"):
                     self.RotateAll(command, meshes_list, mesh)
 
                 # Scale meshes
-                if command[0] == "Scale":
+                if self.checkCmd(command[0], "Scale"):
                     self.Scale(command, mesh)
 
-                if command[0] == "ScaleAll":
+                if self.checkCmd(command[0], "ScaleAll"):
                     self.ScaleAll(command, mesh)
 
                 # Mirror meshes
-                if command[0] == "Mirror":
+                if self.checkCmd(command[0], "Mirror"):
                     self.Mirror(command, mesh)
 
-                if command[0] == "MirrorAll":
+                if self.checkCmd(command[0], "MirrorAll"):
                     self.MirrorAll(command, mesh)
 
             meshes_list.append(mesh)
