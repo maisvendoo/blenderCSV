@@ -299,10 +299,11 @@ class CSVLoader:
     #---------------------------------------------------------------------------
     def toLeftBasis(self, meshes_list):
         for m in meshes_list:
-            command = [None, '0', '0', '1']
-            self.Mirror(command, m)
             command = [None, '1', '0', '0', '-90']
             self.Rotate(command, m)
+            command = [None, '0', '0', '1']
+            self.Mirror(command, m)
+
 
     #---------------------------------------------------------------------------
     #
