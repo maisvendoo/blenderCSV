@@ -472,14 +472,14 @@ class CSVLoader:
                     self.Scale(command, mesh)
 
                 if self.checkCmd(command[0], "ScaleAll"):
-                    self.ScaleAll(command, mesh)
+                    self.ScaleAll(command, meshes_list, mesh)
 
                 # Mirror meshes
                 if self.checkCmd(command[0], "Mirror"):
                     self.Mirror(command, mesh)
 
                 if self.checkCmd(command[0], "MirrorAll"):
-                    self.MirrorAll(command, mesh)
+                    self.MirrorAll(command, meshes_list, mesh)
 
                 if self.checkCmd(command[0], "LoadTexture"):
                     self.loadTexture(command, mesh)
