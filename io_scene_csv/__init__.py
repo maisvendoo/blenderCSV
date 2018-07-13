@@ -11,10 +11,11 @@ bl_info = {
     "category": "Import-Export",
     "author": "Dmitry Pritykin",
     "version": (0, 1, 0),
-    "blender": (2, 78, 0)
+    "blender": (2, 79, 0)
 }
 
 import bpy
+import bmesh
 import os
 
 #-------------------------------------------------------------------------------
@@ -68,6 +69,29 @@ class CSVImporter(bpy.types.Operator):
             slot.texture_coords = 'UV'
             slot.uv_layer = 'default'
 
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
+    def setUVcoords(self, md, mesh):
+        bm = bmesh.new()
+        bm.from_mesh(md)
+
+        uv_layer = bm.loops.layers.uv.new()
+
+        for f in bm.faces:
+            for v, l in zip(f.verts, f.loops):
+                luv = l[uv_layer]
+                print(v.index)
+                try:
+                    tmp = mesh.texcoords_list[v.index]
+                    print(tmp)
+                    luv.uv[0] = tmp[1]
+                    luv.uv[1] = tmp[2]
+                except Exception as ex:
+                    pass
+
+        bm.to_mesh(md)
+
 
     #---------------------------------------------------------------------------
     # Action by menu item selection
@@ -98,6 +122,9 @@ class CSVImporter(bpy.types.Operator):
 
             # Material creation
             self.createMaterial(me, m)
+
+            # UV-map creation
+            self.setUVcoords(me, m)
 
             # Create object and link it to scene
             obj = bpy.data.objects.new(me.name, me)
@@ -138,9 +165,10 @@ class CSVExporter(bpy.types.Operator):
             vertex = list(glob_vert)
 
             uv_map = []
-            for loop_idx in f.loop_indices:
-                uv_coords = md.uv_layers.active.data[loop_idx].uv
-                uv_map.append(uv_coords)
+            if md.uv_layers.active:
+                for loop_idx in f.loop_indices:
+                    uv_coords = md.uv_layers.active.data[loop_idx].uv
+                    uv_map.append(uv_coords)
 
             #print(list(uv_map))
 

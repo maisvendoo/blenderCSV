@@ -538,6 +538,10 @@ class CSVLoader:
     #---------------------------------------------------------------------------
     def export(self, path, meshes_list):
 
+        if len(meshes_list) == 0:
+            print("Please, select objects for export")
+            return
+
         csv_text = []
         csv_text.append(";------------------------------------------------------\n")
         csv_text.append("; CSV exporter from Blender, RGUPS, Dmitry Pritykin\n")
