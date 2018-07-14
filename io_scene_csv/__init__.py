@@ -65,9 +65,11 @@ class CSVImporter(bpy.types.Operator):
             c = mesh.diffuse_color[i]
             mat.diffuse_color[i] = float(c) / 255.0
 
-        mat.alpha = float(mesh.diffuse_color[3]) / 255.0
-        mat.use_transparency = True
-        mat.transparency_method = 'Z_TRANSPARENCY'
+        # Set alpha channel
+        if len(mesh.diffuse_color) > 3:
+            mat.alpha = float(mesh.diffuse_color[3]) / 255.0
+            mat.use_transparency = True
+            mat.transparency_method = 'Z_TRANSPARENCY'
 
         # Tune material texture
         if mesh.texture_file != "":

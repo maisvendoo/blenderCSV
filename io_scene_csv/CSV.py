@@ -41,7 +41,7 @@ class CSVLoader:
     #---------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------
-    def addFace(self, command, mesh):
+    def addFace(self, command, mesh, is_face2 = False):
         face = []
         for i in range(1, len(command)):
             try:
@@ -58,6 +58,9 @@ class CSVLoader:
             b_face.append(face[i])
 
         mesh.faces_list.append(tuple(b_face))
+
+        if is_face2:
+            mesh.faces_list.append(tuple(face))
 
     # ---------------------------------------------------------------------------
     #
@@ -437,23 +440,7 @@ class CSVLoader:
                     self.addFace(command, mesh)
 
                 if self.checkCmd(command[0], "AddFace2"):
-                    face1 = []
-                    for i in range(1, len(command)):
-                        try:
-                            v = int(command[i])
-                            face1.append(v)
-                        except ValueError:
-                            print("ERROR!!! INVALID DATA")
-
-                    mesh.faces_list.append(tuple(face1))
-
-                    face2 = []
-                    face2.append(face1[0])
-
-                    for i in range(len(face1) - 1, 0, -1):
-                        face2.append(face1[i])
-
-                    mesh.faces_list.append(tuple(face2))
+                    self.addFace(command, mesh, True)
 
                 # Create cube
                 if self.checkCmd(command[0], "Cube"):
