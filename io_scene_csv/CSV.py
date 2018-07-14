@@ -552,7 +552,7 @@ class CSVLoader:
     #---------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------
-    def export(self, path, meshes_list):
+    def export(self, path, meshes_list, left_coords_transform = True):
 
         if len(meshes_list) == 0:
             print("Please, select objects for export")
@@ -564,7 +564,9 @@ class CSVLoader:
         csv_text.append(";------------------------------------------------------\n")
 
         # Conversion to left basis
-        self.toLeftBasis(meshes_list)
+        if left_coords_transform:
+            self.toLeftBasis(meshes_list)
+
         # Transform UV coordinates
         self.transformUV(meshes_list)
         # Generate mesh

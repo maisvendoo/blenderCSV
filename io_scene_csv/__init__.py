@@ -173,26 +173,49 @@ class CSVExporter(bpy.types.Operator):
 
     filepath = bpy.props.StringProperty(subtype="FILE_PATH")
 
+    # Left crew coordinat system transformation
+    use_left_coords_transform = bpy.props.BoolProperty(
+        name = "OpenBVE coordinate system",
+        description = "Transformation to OpenBVE left crew coordinat system",
+        default = True,
+    )
+
+    use_mesh_scale = bpy.props.FloatProperty(
+        name = "Scale",
+        description = "Global scale of the all scene objects",
+        default = 1.0,
+        min = 0.0001,
+        max = 10000.0,
+    )
+
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
     def addFaceToMesh(self, obj, md, f, mesh):
 
         face = []
 
         for i, v in enumerate(f.vertices):
+
+            #Get local vertex coordinate
             loc_vert = md.vertices[v].co
+
+            # Apply scale form user settings
+            scaled_vert = self.use_mesh_scale * loc_vert
+
+            # Transform local to world coordinates
             matrix = obj.matrix_world
-            glob_vert = matrix * loc_vert
+            glob_vert = matrix * scaled_vert
             vertex = list(glob_vert)
 
+            # Get face's UV-map
             uv_map = []
             if md.uv_layers.active:
                 for loop_idx in f.loop_indices:
                     uv_coords = md.uv_layers.active.data[loop_idx].uv
                     uv_map.append(uv_coords)
 
-            #print(list(uv_map))
-
-            v_idx = -1
-
+            # Filter duplicated vertices
             if not (vertex in mesh.vertex_list):
                 mesh.vertex_list.append(vertex)
                 print("Append vertex: ", vertex)
@@ -202,13 +225,19 @@ class CSVExporter(bpy.types.Operator):
                 v_idx = mesh.vertex_list.index(vertex)
                 face.append(v_idx)
 
+
+        # CSV format face creation (invert vertices order)
         csv_face = []
         csv_face.append(face[0])
-        mesh.texcoords_list.append([face[0], uv_map[0].x, uv_map[0].y])
+
+        if md.uv_layers.active:
+            mesh.texcoords_list.append([face[0], uv_map[0].x, uv_map[0].y])
 
         for i in range(len(face) - 1, 0, -1):
             csv_face.append(face[i])
-            mesh.texcoords_list.append([face[i], uv_map[i].x, uv_map[i].y])
+
+            if md.uv_layers.active:
+                mesh.texcoords_list.append([face[i], uv_map[i].x, uv_map[i].y])
 
         print("Append Face: ", csv_face)
         mesh.faces_list.append(csv_face)
@@ -307,7 +336,7 @@ class CSVExporter(bpy.types.Operator):
         from .CSV import CSVLoader
 
         exporter = CSVLoader()
-        exporter.export(path, self.getSelectedMeshes())
+        exporter.export(path, self.getSelectedMeshes(), self.use_left_coords_transform)
 
         return {'FINISHED'}
 
