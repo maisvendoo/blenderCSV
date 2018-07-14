@@ -37,6 +37,9 @@ class CSVImporter(bpy.types.Operator):
         tmp = basename.split(".")
         return tmp[0]
 
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
     def createMaterial(self, md, mesh):
 
         # Create new material for object
@@ -45,16 +48,28 @@ class CSVImporter(bpy.types.Operator):
         else:
             matName = md.name;
 
+        # Check is material already exists
         mat = bpy.data.materials.get(matName)
 
         if mat is None:
             mat = bpy.data.materials.new(name=matName)
 
+        # Add material to material's slot
         if md.materials:
             md.materials[0] = mat
         else:
             md.materials.append(mat)
 
+        # Set solid color parametres
+        for i in range(0, len(mesh.diffuse_color) - 1):
+            c = mesh.diffuse_color[i]
+            mat.diffuse_color[i] = float(c) / 255.0
+
+        mat.alpha = float(mesh.diffuse_color[3]) / 255.0
+        mat.use_transparency = True
+        mat.transparency_method = 'Z_TRANSPARENCY'
+
+        # Tune material texture
         if mesh.texture_file != "":
 
             modelDir = os.path.dirname(self.filepath)
@@ -215,13 +230,16 @@ class CSVExporter(bpy.types.Operator):
                 # Get mesh data from object
                 md = obj.data
 
+                # Sort faces by material index
                 csv_meshes = {}
                 for f in md.polygons:
                     csv_meshes[f.material_index] = []
 
                 print(csv_meshes)
 
+                # Check is exists meshes with material
                 if len(csv_meshes) == 0:
+
                     # Single mesh without material
                     mesh = CSVmesh()
 
@@ -244,14 +262,23 @@ class CSVExporter(bpy.types.Operator):
                         mesh = CSVmesh()
                         mesh.name = "Mesh: " + obj.name + " Material: " + mat.name
 
+                        # Diffuse color componets
                         for c in mat.diffuse_color:
                             mesh.diffuse_color.append(round(c * 255))
 
+                        # Alpha channel
+                        if mat.use_transparency:
+                            mesh.diffuse_color.append(round(mat.alpha * 255))
+
+                        # Texture settings
                         texture_idx = mat.active_texture_index
                         try:
+
+                            # Get file path from texture's slot
                             texture_path = mat.texture_slots[texture_idx].texture.image.filepath
                             mesh.texture_file = texture_path
 
+                            # Calcurate texture path
                             modelDir = os.path.dirname(self.filepath)
                             relPath = os.path.relpath(texture_path, modelDir)
 

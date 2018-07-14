@@ -38,6 +38,27 @@ class CSVLoader:
         tmp = line.rstrip('\n').rstrip('\r').rstrip(' ').split(",")
         return tmp
 
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
+    def addFace(self, command, mesh):
+        face = []
+        for i in range(1, len(command)):
+            try:
+                v = int(command[i])
+                face.append(v)
+            except ValueError:
+                pass
+
+        b_face = []
+        b_face.append(face[0])
+
+        # Invert vertices order
+        for i in range(len(face)-1, 0, -1):
+            b_face.append(face[i])
+
+        mesh.faces_list.append(tuple(b_face))
+
     # ---------------------------------------------------------------------------
     #
     # ---------------------------------------------------------------------------
@@ -413,16 +434,7 @@ class CSVLoader:
                         pass
 
                 if self.checkCmd(command[0], "AddFace"):
-                    face = []
-                    for i in range(1, len(command)):
-                        try:
-                            v = int(command[i])
-                            face.append(v)
-                        except ValueError:
-                            print("ERROR: invalid data in string: " + str(j) +
-                                  " argument: " + command[i])
-
-                    mesh.faces_list.append(tuple(face))
+                    self.addFace(command, mesh)
 
                 if self.checkCmd(command[0], "AddFace2"):
                     face1 = []
