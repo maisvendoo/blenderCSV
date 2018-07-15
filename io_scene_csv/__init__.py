@@ -7,7 +7,7 @@
 #-------------------------------------------------------------------------------
 
 bl_info = {
-    "name": "Importer OpenBVE CSV models",
+    "name": "Importer/Exporter OpenBVE CSV models",
     "category": "Import-Export",
     "author": "Dmitry Pritykin",
     "version": (0, 1, 0),
