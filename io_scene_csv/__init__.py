@@ -218,7 +218,7 @@ class CSVExporter(bpy.types.Operator):
     use_left_coords_transform = bpy.props.BoolProperty(
         name = "OpenBVE coordinate system",
         description = "Transformation to OpenBVE left crew coordinat system",
-        default = False,
+        default = True,
     )
 
     # Global scale form exported geometry
