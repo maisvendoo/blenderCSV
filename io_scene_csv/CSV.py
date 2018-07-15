@@ -330,16 +330,6 @@ class CSVLoader:
     #---------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------
-    def toLeftBasis(self, meshes_list):
-        for m in meshes_list:
-            command = [None, '1', '0', '0', '-90']
-            self.Rotate(command, m)
-            command = [None, '0', '1', '0']
-            self.Mirror(command, m)
-
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
     def checkCmd(self, cmd, patern):
         return cmd.upper().lower() == patern.upper().lower()
 
@@ -501,8 +491,8 @@ class CSVLoader:
                   "f:" + str(len(m.faces_list)))
 
         # Convertion to Blender basis
-        if is_transform:
-            self.toRightBasis(meshes_list)
+        #if is_transform:
+         #   self.toRightBasis(meshes_list)
 
         # Transform texture coordinates to blender format
         self.transformUV(meshes_list)
@@ -580,8 +570,8 @@ class CSVLoader:
         csv_text.append(";------------------------------------------------------\n")
 
         # Conversion to left basis
-        if left_coords_transform:
-            self.toLeftBasis(meshes_list)
+        #if left_coords_transform:
+         #   self.toLeftBasis(meshes_list)
 
         # Transform UV coordinates
         self.transformUV(meshes_list)

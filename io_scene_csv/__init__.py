@@ -21,6 +21,38 @@ import os
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
+def toRightBasis(md):
+    import mathutils
+    import math
+    mat_rot = mathutils.Matrix.Rotation(math.radians(90.0), 4, 'X')
+    mat_mirror_y = mathutils.Matrix()
+    mat_mirror_y[0][0], mat_mirror_y[0][1], mat_mirror_y[0][2], mat_mirror_y[0][3] = 1, 0, 0, 0
+    mat_mirror_y[1][0], mat_mirror_y[1][1], mat_mirror_y[1][2], mat_mirror_y[1][3] = 0, -1, 0, 0
+    mat_mirror_y[2][0], mat_mirror_y[2][1], mat_mirror_y[2][2], mat_mirror_y[2][3] = 0, 0, 1, 0
+    mat_mirror_y[3][0], mat_mirror_y[3][1], mat_mirror_y[3][2], mat_mirror_y[3][3] = 0, 0, 0, 1
+
+    for v in md.vertices:
+        v.co = mat_mirror_y * mat_rot * v.co
+
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
+def toLeftBasis(md):
+    import mathutils
+    import math
+    mat_rot = mathutils.Matrix.Rotation(math.radians(-90.0), 4, 'X')
+    mat_mirror_y = mathutils.Matrix()
+    mat_mirror_y[0][0], mat_mirror_y[0][1], mat_mirror_y[0][2], mat_mirror_y[0][3] = 1, 0, 0, 0
+    mat_mirror_y[1][0], mat_mirror_y[1][1], mat_mirror_y[1][2], mat_mirror_y[1][3] = 0, -1, 0, 0
+    mat_mirror_y[2][0], mat_mirror_y[2][1], mat_mirror_y[2][2], mat_mirror_y[2][3] = 0, 0, 1, 0
+    mat_mirror_y[3][0], mat_mirror_y[3][1], mat_mirror_y[3][2], mat_mirror_y[3][3] = 0, 0, 0, 1
+
+    for v in md.vertices:
+        v.co = mat_rot * mat_mirror_y * v.co
+
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
 class CSVImporter(bpy.types.Operator):
     """CSV models importer"""
     bl_idname = "import_scene.csv"
@@ -32,7 +64,7 @@ class CSVImporter(bpy.types.Operator):
     use_left_coords_transform = bpy.props.BoolProperty(
         name="Transform coordinates",
         description="Transformation from OpenBVE left crew coordinat system",
-        default=False,
+        default=True,
     )
 
     #---------------------------------------------------------------------------
@@ -151,6 +183,9 @@ class CSVImporter(bpy.types.Operator):
             # UV-map creation
             self.setUVcoords(me, m)
 
+            if self.use_left_coords_transform:
+                toRightBasis(me)
+
             # Create object and link it to scene
             obj = bpy.data.objects.new(me.name, me)
             bpy.context.scene.objects.link(obj)
@@ -193,6 +228,39 @@ class CSVExporter(bpy.types.Operator):
         default = 1.0,
         min = 0.0001,
         max = 10000.0,
+    )
+
+    use_add_face2 = bpy.props.BoolProperty(
+        name="Use AddFace2 command",
+        description="Use AddFace2 command for generate faces in OpenBVE",
+        default=False,
+    )
+
+    use_transparent_decale_color = bpy.props.BoolProperty(
+        name="Use transparent decale color",
+        description="Texture color, which will transparent in OpenBVE",
+        default=False,
+    )
+
+    decale_color_red = bpy.props.IntProperty(
+        name="R",
+        default=0,
+        min = 0,
+        max = 255
+    )
+
+    decale_color_green = bpy.props.IntProperty(
+        name="G",
+        default=0,
+        min=0,
+        max=255
+    )
+
+    decale_color_blue = bpy.props.IntProperty(
+        name="B",
+        default=0,
+        min=0,
+        max=255
     )
 
     use_texture_separate_directory = bpy.props.BoolProperty(
@@ -273,6 +341,8 @@ class CSVExporter(bpy.types.Operator):
 
                 # Get mesh data from object
                 md = obj.data
+                if self.use_left_coords_transform:
+                    toLeftBasis(md)
 
                 # Sort faces by material index
                 csv_meshes = {}
@@ -361,20 +431,24 @@ class CSVExporter(bpy.types.Operator):
                         for f in faces:
                             self.addFaceToMesh(obj, md, f, mesh)
 
-                        #mesh.is_addFace2 = bpy.types.Object.is_addFace2
+                        mesh.is_addFace2 = self.use_add_face2
+                        mesh.is_decale = self.use_transparent_decale_color
 
-                        # Decale color
-                        #mesh.is_decale = bpy.types.Material.is_decale
-                        #if mesh.is_decale:
-                            #mesh.decale_color.append(bpy.types.Material.decaleRed)
-                            #mesh.decale_color.append(bpy.types.Material.decaleGreen)
-                            #mesh.decale_color.append(bpy.types.Material.decaleBlue)
+                        if mesh.is_decale:
+                            mesh.decale_color.append(self.decale_color_red)
+                            mesh.decale_color.append(self.decale_color_green)
+                            mesh.decale_color.append(self.decale_color_blue)
 
                         meshes_list.append(mesh)
 
+                if self.use_left_coords_transform:
+                    toRightBasis(md)
 
         return meshes_list
 
+    #-------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------
     def execute(self, context):
 
         path = self.filepath
@@ -387,6 +461,9 @@ class CSVExporter(bpy.types.Operator):
 
         return {'FINISHED'}
 
+    #-------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------
     def invoke(self, context, event):
         self.filepath = "undefined" + self.filename_ext
         context.window_manager.fileselect_add(self)
@@ -404,27 +481,6 @@ def menu_import(self, context):
 def menu_export(self, context):
     self.layout.operator(CSVExporter.bl_idname, text=CSVExporter.bl_label)
 
-'''
-#-------------------------------------------------------------------------------
-#
-#-------------------------------------------------------------------------------
-def draw_func_material(self, context):
-    layout = self.layout
-    obj = context.object
-    layout.prop(obj.active_material, "is_decale")
-    layout.prop(obj.active_material, "decaleRed")
-    layout.prop(obj.active_material, "decaleGreen")
-    layout.prop(obj.active_material, "decaleBlue")
-
-#-------------------------------------------------------------------------------
-#
-#-------------------------------------------------------------------------------
-def draw_func_object(self, context):
-    layout = self.layout
-    obj = context.object
-    layout.prop(obj, "is_addFace2")
-'''
-
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
@@ -435,43 +491,6 @@ def register():
     bpy.types.INFO_MT_file_export.append(menu_export)
     bpy.utils.register_class(CSVExporter)
 
-    '''
-    bpy.types.Material.is_decale = bpy.props.BoolProperty(
-        name="Set decale transparent color",
-        default=False,
-    )
-
-    bpy.types.Material.decaleRed = bpy.props.IntProperty(
-        name="R",
-        default=0,
-        min = 0,
-        max = 255,
-    )
-
-    bpy.types.Material.decaleGreen = bpy.props.IntProperty(
-        name="G",
-        default=0,
-        min=0,
-        max=255,
-    )
-
-    bpy.types.Material.decaleBlue = bpy.props.IntProperty(
-        name="B",
-        default=0,
-        min=0,
-        max=255,
-    )
-
-    bpy.types.MATERIAL_PT_context_material.prepend(draw_func_material)
-
-    bpy.types.Object.is_addFace2 = bpy.props.BoolProperty(
-        name="Generate AddFace2 commands",
-        default=False,
-    )
-
-    bpy.types.OBJECT_PT_context_object.prepend(draw_func_object)
-    '''
-
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
@@ -481,9 +500,6 @@ def unregister():
 
     bpy.types.INFO_MT_file_export.remove(menu_export)
     bpy.utils.unregister_class(CSVExporter)
-
-    #bpy.types.MATERIAL_PT_context_material.remove(draw_func_material)
-    #bpy.types.OBJECT_PT_context_object.remove(draw_func_object)
 
 #-------------------------------------------------------------------------------
 #
