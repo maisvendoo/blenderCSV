@@ -287,6 +287,19 @@ class CSVExporter(bpy.types.Operator):
             # Transform local to world coordinates
             matrix = obj.matrix_world
             glob_vert = matrix * scaled_vert
+
+            if self.use_left_coords_transform:
+                import mathutils
+                import math
+                mat_rot = mathutils.Matrix.Rotation(math.radians(-90.0), 4, 'X')
+                mat_mirror_y = mathutils.Matrix()
+                mat_mirror_y[0][0], mat_mirror_y[0][1], mat_mirror_y[0][2], mat_mirror_y[0][3] = 1, 0, 0, 0
+                mat_mirror_y[1][0], mat_mirror_y[1][1], mat_mirror_y[1][2], mat_mirror_y[1][3] = 0, -1, 0, 0
+                mat_mirror_y[2][0], mat_mirror_y[2][1], mat_mirror_y[2][2], mat_mirror_y[2][3] = 0, 0, 1, 0
+                mat_mirror_y[3][0], mat_mirror_y[3][1], mat_mirror_y[3][2], mat_mirror_y[3][3] = 0, 0, 0, 1
+
+                glob_vert = mat_rot * mat_mirror_y * glob_vert
+
             vertex = list(glob_vert)
 
             # Get face's UV-map
@@ -341,8 +354,8 @@ class CSVExporter(bpy.types.Operator):
 
                 # Get mesh data from object
                 md = obj.data
-                if self.use_left_coords_transform:
-                    toLeftBasis(md)
+                #if self.use_left_coords_transform:
+                 #   toLeftBasis(md)
 
                 # Sort faces by material index
                 csv_meshes = {}
@@ -441,8 +454,8 @@ class CSVExporter(bpy.types.Operator):
 
                         meshes_list.append(mesh)
 
-                if self.use_left_coords_transform:
-                    toRightBasis(md)
+                #if self.use_left_coords_transform:
+                 #   toRightBasis(md)
 
         return meshes_list
 
