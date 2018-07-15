@@ -29,6 +29,12 @@ class CSVImporter(bpy.types.Operator):
 
     filepath = bpy.props.StringProperty(subtype="FILE_PATH")
 
+    use_left_coords_transform = bpy.props.BoolProperty(
+        name="Transform coordinates",
+        description="Transformation from OpenBVE left crew coordinat system",
+        default=False,
+    )
+
     #---------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------
@@ -75,7 +81,7 @@ class CSVImporter(bpy.types.Operator):
         if mesh.texture_file != "":
 
             modelDir = os.path.dirname(self.filepath)
-            texImgPath = modelDir + os.path.sep + mesh.texture_file
+            texImgPath = os.path.join(modelDir, mesh.texture_file)
             print(texImgPath)
             img = bpy.data.images.load(texImgPath)
 
@@ -124,7 +130,7 @@ class CSVImporter(bpy.types.Operator):
 
         # Load model from CSV file
         loader = CSV.CSVLoader()
-        meshes_list = loader.loadCSV(path)
+        meshes_list = loader.loadCSV(path, self.use_left_coords_transform)
 
         print("Loaded " + str(len(meshes_list)) + " meshes")
 
@@ -177,15 +183,22 @@ class CSVExporter(bpy.types.Operator):
     use_left_coords_transform = bpy.props.BoolProperty(
         name = "OpenBVE coordinate system",
         description = "Transformation to OpenBVE left crew coordinat system",
-        default = True,
+        default = False,
     )
 
+    # Global scale form exported geometry
     use_mesh_scale = bpy.props.FloatProperty(
         name = "Scale",
         description = "Global scale of the all scene objects",
         default = 1.0,
         min = 0.0001,
         max = 10000.0,
+    )
+
+    use_texture_separate_directory = bpy.props.BoolProperty(
+        name = "Copy textures in separate folder",
+        description = "Copied textures in directory near *.csv file. Directory name will be: <model name>-textures",
+        default = True,
     )
 
     #---------------------------------------------------------------------------
@@ -279,6 +292,7 @@ class CSVExporter(bpy.types.Operator):
                         mesh.name = "Mesh: " + obj.name + " Material: None"
                         self.addFaceToMesh(obj, md, f, mesh)
 
+                    mesh.is_addFace2 = bpy.types.Object.is_addFace2
                     meshes_list.append(mesh)
                 else:
 
@@ -307,21 +321,54 @@ class CSVExporter(bpy.types.Operator):
 
                             # Get file path from texture's slot
                             texture_path = mat.texture_slots[texture_idx].texture.image.filepath
-                            mesh.texture_file = texture_path
-
-                            # Calcurate texture path
+                            # Convert path to absolute OS path
+                            texture_path = bpy.path.abspath(texture_path)
+                            # Get directory of model file
                             modelDir = os.path.dirname(self.filepath)
-                            relPath = os.path.relpath(texture_path, modelDir)
 
-                            print("Texture path: ", relPath)
+                            # Set path for textures
+                            if self.use_texture_separate_directory:
+                                filename, file_ext = os.path.splitext(self.filepath)
+                                filename = os.path.basename(filename)
+                                textureName = os.path.basename(texture_path)
 
-                            mesh.texture_file = relPath
+                                relTexDir = filename + "-textures"
+                                textureDir = os.path.join(modelDir, relTexDir)
+
+                                # Create directory for textures
+                                if not os.path.exists(textureDir):
+                                    oldmask = os.umask(0)
+                                    print(oldmask)
+                                    os.chdir(modelDir)
+                                    os.makedirs(relTexDir, mode=0o777)
+                                    os.umask(oldmask)
+
+                                # Copy texture to directory
+                                from shutil import copyfile
+                                copyfile(texture_path, os.path.join(textureDir, textureName))
+
+                                mesh.texture_file = os.path.join(relTexDir, textureName)
+                                print("Texture path: " + mesh.texture_file)
+                            else:
+                                # Calcurate texture path
+                                relPath = os.path.relpath(texture_path, modelDir)
+                                print("Texture path: ", relPath)
+                                mesh.texture_file = relPath
 
                         except Exception as ex:
-                            pass
+                            print(ex)
 
                         for f in faces:
                             self.addFaceToMesh(obj, md, f, mesh)
+
+                        #mesh.is_addFace2 = bpy.types.Object.is_addFace2
+
+                        # Decale color
+                        #mesh.is_decale = bpy.types.Material.is_decale
+                        #if mesh.is_decale:
+                            #mesh.decale_color.append(bpy.types.Material.decaleRed)
+                            #mesh.decale_color.append(bpy.types.Material.decaleGreen)
+                            #mesh.decale_color.append(bpy.types.Material.decaleBlue)
 
                         meshes_list.append(mesh)
 
@@ -357,6 +404,27 @@ def menu_import(self, context):
 def menu_export(self, context):
     self.layout.operator(CSVExporter.bl_idname, text=CSVExporter.bl_label)
 
+'''
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
+def draw_func_material(self, context):
+    layout = self.layout
+    obj = context.object
+    layout.prop(obj.active_material, "is_decale")
+    layout.prop(obj.active_material, "decaleRed")
+    layout.prop(obj.active_material, "decaleGreen")
+    layout.prop(obj.active_material, "decaleBlue")
+
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
+def draw_func_object(self, context):
+    layout = self.layout
+    obj = context.object
+    layout.prop(obj, "is_addFace2")
+'''
+
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
@@ -367,6 +435,43 @@ def register():
     bpy.types.INFO_MT_file_export.append(menu_export)
     bpy.utils.register_class(CSVExporter)
 
+    '''
+    bpy.types.Material.is_decale = bpy.props.BoolProperty(
+        name="Set decale transparent color",
+        default=False,
+    )
+
+    bpy.types.Material.decaleRed = bpy.props.IntProperty(
+        name="R",
+        default=0,
+        min = 0,
+        max = 255,
+    )
+
+    bpy.types.Material.decaleGreen = bpy.props.IntProperty(
+        name="G",
+        default=0,
+        min=0,
+        max=255,
+    )
+
+    bpy.types.Material.decaleBlue = bpy.props.IntProperty(
+        name="B",
+        default=0,
+        min=0,
+        max=255,
+    )
+
+    bpy.types.MATERIAL_PT_context_material.prepend(draw_func_material)
+
+    bpy.types.Object.is_addFace2 = bpy.props.BoolProperty(
+        name="Generate AddFace2 commands",
+        default=False,
+    )
+
+    bpy.types.OBJECT_PT_context_object.prepend(draw_func_object)
+    '''
+
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
@@ -376,6 +481,9 @@ def unregister():
 
     bpy.types.INFO_MT_file_export.remove(menu_export)
     bpy.utils.unregister_class(CSVExporter)
+
+    #bpy.types.MATERIAL_PT_context_material.remove(draw_func_material)
+    #bpy.types.OBJECT_PT_context_object.remove(draw_func_object)
 
 #-------------------------------------------------------------------------------
 #

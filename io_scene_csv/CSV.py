@@ -19,6 +19,9 @@ class CSVmesh:
         self.texcoords_list = []
         self.texture_file = ""
         self.diffuse_color = []
+        self.decale_color = []
+        self.is_decale = False
+        self.is_addFace2 = False
         self.ty_max = 1
 
 #-------------------------------------------------------------------------------
@@ -58,9 +61,10 @@ class CSVLoader:
             b_face.append(face[i])
 
         mesh.faces_list.append(tuple(b_face))
+        mesh.is_addFace2 = is_face2
 
-        if is_face2:
-            mesh.faces_list.append(tuple(face))
+        #if is_face2:
+            #mesh.faces_list.append(tuple(face))
 
     # ---------------------------------------------------------------------------
     #
@@ -303,24 +307,25 @@ class CSVLoader:
             v = tuple(tmp)
             mesh.vertex_list[i] = v
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     #
-    #---------------------------------------------------------------------------
-    def MirrorAll(self, command, meshes_list, mesh):
-        for m in meshes_list:
-            self.Mirror(command, m)
-
-        self.Mirror(command, mesh)
-
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def toRightBasis(self, meshes_list):
         for m in meshes_list:
             command = [None, '0', '0', '1']
             self.Mirror(command, m)
             command = [None, '1', '0', '0', '90']
             self.Rotate(command, m)
+
+    # ---------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------
+    def toLeftBasis(self, meshes_list):
+        for m in meshes_list:
+            command = [None, '1', '0', '0', '-90']
+            self.Rotate(command, m)
+            command = [None, '0', '0', '1']
+            self.Mirror(command, m)
 
     #---------------------------------------------------------------------------
     #
@@ -329,7 +334,7 @@ class CSVLoader:
         for m in meshes_list:
             command = [None, '1', '0', '0', '-90']
             self.Rotate(command, m)
-            command = [None, '0', '0', '1']
+            command = [None, '0', '1', '0']
             self.Mirror(command, m)
 
     #---------------------------------------------------------------------------
@@ -384,7 +389,7 @@ class CSVLoader:
     #---------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------
-    def loadCSV(self, filePath):
+    def loadCSV(self, filePath, is_transform = False):
 
         meshes_list = []
 
@@ -496,7 +501,8 @@ class CSVLoader:
                   "f:" + str(len(m.faces_list)))
 
         # Convertion to Blender basis
-        self.toRightBasis(meshes_list)
+        if is_transform:
+            self.toRightBasis(meshes_list)
 
         # Transform texture coordinates to blender format
         self.transformUV(meshes_list)
@@ -507,15 +513,14 @@ class CSVLoader:
     #
     #---------------------------------------------------------------------------
     def generateModel(self, csv_text, meshes_list):
-        for mesh in meshes_list:
 
+        for mesh in meshes_list:
             # New mesh
             csv_text.append("\n; " + mesh.name + "\n")
             csv_text.append("CreateMeshBuilder,\n")
 
             # Vertices
             for v in mesh.vertex_list:
-
                 addVertex = "AddVertex, "
                 for coord in v:
                     addVertex = addVertex + str(coord) + ", "
@@ -526,7 +531,11 @@ class CSVLoader:
             # Faces
             for face in mesh.faces_list:
 
-                addFace = "AddFace, "
+                if mesh.is_addFace2:
+                    addFace = "AddFace2, "
+                else:
+                    addFace = "AddFace, "
+
                 for v_idx in face:
                     addFace = addFace + str(v_idx) + ", "
                 csv_text.append(addFace + "\n")
@@ -538,6 +547,13 @@ class CSVLoader:
             for c in mesh.diffuse_color:
                 setColor = setColor + str(c) + ","
             csv_text.append(setColor + "\n")
+
+            # Decale color
+            if mesh.is_decale:
+                setDecalTransparentColor = "SetDecalTransparentColor, "
+                for c in mesh.decale_color:
+                    setDecalTransparentColor = setDecalTransparentColor + str(c) + ","
+                csv_text.append(setDecalTransparentColor + "\n")
 
             # Texture
             if mesh.texture_file != "":
