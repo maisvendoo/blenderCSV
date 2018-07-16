@@ -366,9 +366,15 @@ class CSVExporter(bpy.types.Operator):
 
         from shutil import copyfile
         try:
-            copyfile(texture_path, os.path.join(texture_dir, texture_name))
+            dest_path = os.path.join(texture_dir, texture_name)
+
+            if os.path.exists(dest_path):
+                os.remove(dest_path)
+
+            copyfile(texture_path, dest_path)
         except Exception as ex:
-            print("File ", os.path.join(texture_dir, texture_name), " already exist")
+            print(ex)
+            return ""
 
         return os.path.join(rel_tex_dir, texture_name)
 
