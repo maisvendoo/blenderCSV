@@ -368,10 +368,9 @@ class CSVExporter(bpy.types.Operator):
         try:
             dest_path = os.path.join(texture_dir, texture_name)
 
-            if os.path.exists(dest_path):
-                os.remove(dest_path)
-
-            copyfile(texture_path, dest_path)
+            if not os.path.exists(dest_path):
+                copyfile(texture_path, dest_path)
+                
         except Exception as ex:
             print(ex)
             return ""
