@@ -144,7 +144,8 @@ class CSVImporter(bpy.types.Operator):
             md.materials.append(mat)
 
         # Set solid color parametres
-        mat.diffuse_color = (mesh.diffuse_color[0] / 255.0, mesh.diffuse_color[1] / 255.0, mesh.diffuse_color[2] / 255.0)
+        if mesh.diffuse_color:
+            mat.diffuse_color = (mesh.diffuse_color[0] / 255.0, mesh.diffuse_color[1] / 255.0, mesh.diffuse_color[2] / 255.0)
 
         # Set alpha channel
         if len(mesh.diffuse_color) > 3:
@@ -458,17 +459,20 @@ class CSVExporter(bpy.types.Operator):
                             tex_idx = mat.active_texture_index
                             print("Texture index: ", tex_idx)
 
-                            texture_path = mat.texture_slots[tex_idx].texture.image.filepath
-                            texture_path = bpy.path.abspath(texture_path)
-                            model_dir = os.path.dirname(self.filepath)
+                            try:
+                                texture_path = mat.texture_slots[tex_idx].texture.image.filepath
+                                texture_path = bpy.path.abspath(texture_path)
+                                model_dir = os.path.dirname(self.filepath)
 
-                            if self.use_texture_separate_directory:
-                                mesh.texture_file = self.copyTexture(texture_path, model_dir)
-                            else:
-                                rel_path = os.path.relpath(texture_path, model_dir)
-                                mesh.texture_file = rel_path
+                                if self.use_texture_separate_directory:
+                                    mesh.texture_file = self.copyTexture(texture_path, model_dir)
+                                else:
+                                    rel_path = os.path.relpath(texture_path, model_dir)
+                                    mesh.texture_file = rel_path
 
-                            print("Texture path: ", mesh.texture_file)
+                                print("Texture path: ", mesh.texture_file)
+                            except Exception as ex:
+                                print(ex)
 
                     else:
                         mesh.diffuse_color = [128, 128, 128, 255]
