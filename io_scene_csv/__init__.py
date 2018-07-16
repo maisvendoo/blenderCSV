@@ -365,7 +365,10 @@ class CSVExporter(bpy.types.Operator):
             os.umask(old_mask)
 
         from shutil import copyfile
-        copyfile(texture_path, os.path.join(texture_dir, texture_name))
+        try:
+            copyfile(texture_path, os.path.join(texture_dir, texture_name))
+        except Exception as ex:
+            print("File ", os.path.join(texture_dir, texture_name), " already exist")
 
         return os.path.join(rel_tex_dir, texture_name)
 
