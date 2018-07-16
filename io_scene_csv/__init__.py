@@ -99,9 +99,7 @@ class CSVImporter(bpy.types.Operator):
             md.materials.append(mat)
 
         # Set solid color parametres
-        for i in range(0, len(mesh.diffuse_color) - 1):
-            c = mesh.diffuse_color[i]
-            mat.diffuse_color[i] = float(c) / 255.0
+        mat.diffuse_color = (mesh.diffuse_color[0] / 255.0, mesh.diffuse_color[1] / 255.0, mesh.diffuse_color[2] / 255.0)
 
         # Set alpha channel
         if len(mesh.diffuse_color) > 3:
@@ -303,11 +301,13 @@ class CSVExporter(bpy.types.Operator):
             vertex = list(glob_vert)
 
             # Get face's UV-map
+
             uv_map = []
             if md.uv_layers.active:
                 for loop_idx in f.loop_indices:
                     uv_coords = md.uv_layers.active.data[loop_idx].uv
                     uv_map.append(uv_coords)
+
 
             # Filter duplicated vertices
             if not (vertex in mesh.vertex_list):
