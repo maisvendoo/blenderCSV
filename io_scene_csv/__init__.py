@@ -40,18 +40,60 @@ def toRightBasis(md):
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
-def toLeftBasis(md):
+def invertVertexOrder(face):
+    new_face = []
+    new_face.append(face[0])
+
+    for i in range(len(face) - 1, 0, -1):
+        new_face.append(face[i])
+
+    return new_face
+
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
+def toLeftBasis(obj, mesh):
+
     import mathutils
     import math
+
+    # Матрица поворота вокруг оси X
     mat_rot = mathutils.Matrix.Rotation(math.radians(-90.0), 4, 'X')
+
+    # Матрица отражения вдоль оси Y
     mat_mirror_y = mathutils.Matrix()
     mat_mirror_y[0][0], mat_mirror_y[0][1], mat_mirror_y[0][2], mat_mirror_y[0][3] = 1, 0, 0, 0
     mat_mirror_y[1][0], mat_mirror_y[1][1], mat_mirror_y[1][2], mat_mirror_y[1][3] = 0, -1, 0, 0
     mat_mirror_y[2][0], mat_mirror_y[2][1], mat_mirror_y[2][2], mat_mirror_y[2][3] = 0, 0, 1, 0
     mat_mirror_y[3][0], mat_mirror_y[3][1], mat_mirror_y[3][2], mat_mirror_y[3][3] = 0, 0, 0, 1
 
-    for v in md.vertices:
-        v.co = mat_rot * mat_mirror_y * v.co
+    # Матрица перехода к мировым координатам
+    mat_world = obj.matrix_world
+
+    # Выделяем мтарицу поворота для мировых осей
+    loc, world_rot, scale = obj.matrix_world.decompose()
+
+    # Для каждой вершины
+    for i, vertex in enumerate(mesh.vertex_list):
+
+        loc_vert = mathutils.Vector(vertex)
+        loc_norm = mathutils.Vector(mesh.normals_list[i])
+
+        # Переходим к мировым координатам
+        world_vert = mat_world * loc_vert
+        # Переходим к левой системе координат
+        new_vert = mat_rot * mat_mirror_y * world_vert
+        mesh.vertex_list[i] = list(new_vert)
+
+        # Поворачиваем нормаль
+        world_norm = world_rot * loc_norm
+        new_norm = mat_rot * mat_mirror_y * world_norm
+        mesh.normals_list[i] = list(new_norm)
+
+    # Перелицовываем грани
+    for i, face in enumerate(mesh.faces_list):
+        mesh.faces_list[i] = invertVertexOrder(face)
+
 
 #-------------------------------------------------------------------------------
 #
@@ -270,21 +312,6 @@ class CSVExporter(bpy.types.Operator):
         default = True,
     )
 
-    def exportUVmap(self, md, mesh):
-
-        for i in range(0, len(md.vertices)):
-            mesh.texcoords_list.append([])
-
-        print("Tex. coords: ", len(mesh.texcoords_list))
-
-        for f in md.polygons:
-            for uv_layer in md.uv_layers:
-                for i in f.loop_indices:
-                    uvCoord = uv_layer.data[i].uv
-                    lookupIndex = md.loops[i].vertex_index
-                    texel = [lookupIndex, uvCoord[0], uvCoord[1]]
-                    mesh.texcoords_list[lookupIndex] = texel
-
     #---------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------
@@ -308,13 +335,7 @@ class CSVExporter(bpy.types.Operator):
             v_idx = len(mesh.vertex_list) - 1
             face.append(v_idx)
 
-            #else:
-                # Иначе добавляем в грань индекс уже имеющейся вершины)
-            #    v_idx = mesh.vertex_list.index(vertex)
-            #    face.append(v_idx)
-
         # Пытаемся работать с UV-разверткой
-
         for uv_layer in md.uv_layers:
             for i in fc.loop_indices:
                 uvCoord = uv_layer.data[i].uv
@@ -445,6 +466,10 @@ class CSVExporter(bpy.types.Operator):
                         mesh.diffuse_color = [128, 128, 128, 255]
                         mesh.name += " Material: Undefined"
                         print("Material is't defined. Applied: ", mesh.diffuse_color)
+
+                    # Переходим к координатам OpenBVE
+                    if self.use_left_coords_transform:
+                        toLeftBasis(obj, mesh)
 
                     # Добавляем меш в список
                     meshes_list.append(mesh)
