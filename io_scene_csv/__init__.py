@@ -18,6 +18,9 @@ import bpy
 import bmesh
 import os
 
+def debug_print(f, msg):
+    f.write(msg + "\n")
+
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
@@ -282,200 +285,173 @@ class CSVExporter(bpy.types.Operator):
                     texel = [lookupIndex, uvCoord[0], uvCoord[1]]
                     mesh.texcoords_list[lookupIndex] = texel
 
+    #---------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------
+    def addFaceToMesh(self, md, fc, mesh):
+
+        face = []
+
+        # Перебираем все вершины в данной грани по индексам и порядковым номерам
+        for i, vert_idx in enumerate(fc.vertices):
+
+            # Берем вершину из массива вершин всего меша
+            loc_vertex = md.vertices[vert_idx]
+            vertex = list(loc_vertex.co)
+
+            # Проверяем, имеется ли уже такая вершина в CSV-сетке
+            #if not (vertex in mesh.vertex_list):
+                # Если имеется, до добаляем её как очередную
+            mesh.vertex_list.append(vertex)
+            mesh.normals_list.append(list(loc_vertex.normal))
+            mesh.vertex_indices.append(vert_idx)
+            v_idx = len(mesh.vertex_list) - 1
+            face.append(v_idx)
+
+            #else:
+                # Иначе добавляем в грань индекс уже имеющейся вершины)
+            #    v_idx = mesh.vertex_list.index(vertex)
+            #    face.append(v_idx)
+
+        # Пытаемся работать с UV-разверткой
+
+        for uv_layer in md.uv_layers:
+            for i in fc.loop_indices:
+                uvCoord = uv_layer.data[i].uv
+                lookup_idx = mesh.vertex_indices.index(md.loops[i].vertex_index)
+                texel = [lookup_idx, uvCoord[0], uvCoord[1]]
+                mesh.texcoords_list.append(texel)
 
 
+        mesh.faces_list.append(face)
 
     #---------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------
-    def addFaceToMesh(self, obj, md, f, mesh):
+    def copyTexture(self, texture_path, model_dir):
+        filename, file_ext = os.path.splitext(self.filepath)
+        filename = os.path.basename(filename)
 
-        face = []
+        texture_name = os.path.basename(texture_path)
 
-        for i, v in enumerate(f.vertices):
+        rel_tex_dir = filename + "-textures"
+        texture_dir = os.path.join(model_dir, rel_tex_dir)
 
-            #Get local vertex coordinate
-            loc_vert = md.vertices[v].co
+        if not os.path.exists(texture_dir):
+            old_mask = os.umask(0)
+            os.chdir(model_dir)
+            os.makedirs(rel_tex_dir, mode=0o777)
+            os.umask(old_mask)
 
-            # Apply scale form user settings
-            scaled_vert = self.use_mesh_scale * loc_vert
+        from shutil import copyfile
+        copyfile(texture_path, os.path.join(texture_dir, texture_name))
 
-            # Transform local to world coordinates
-            matrix = obj.matrix_world
-            glob_vert = matrix * scaled_vert
-
-            # Transform to left coordinate system of OpenBVE
-            if self.use_left_coords_transform:
-                import mathutils
-                import math
-                mat_rot = mathutils.Matrix.Rotation(math.radians(-90.0), 4, 'X')
-                mat_mirror_y = mathutils.Matrix()
-                mat_mirror_y[0][0], mat_mirror_y[0][1], mat_mirror_y[0][2], mat_mirror_y[0][3] = 1, 0, 0, 0
-                mat_mirror_y[1][0], mat_mirror_y[1][1], mat_mirror_y[1][2], mat_mirror_y[1][3] = 0, -1, 0, 0
-                mat_mirror_y[2][0], mat_mirror_y[2][1], mat_mirror_y[2][2], mat_mirror_y[2][3] = 0, 0, 1, 0
-                mat_mirror_y[3][0], mat_mirror_y[3][1], mat_mirror_y[3][2], mat_mirror_y[3][3] = 0, 0, 0, 1
-                glob_vert = mat_rot * mat_mirror_y * glob_vert
-
-            vertex = list(glob_vert)
-
-            # Get face's UV-map
-
-            '''
-            uv_map = []
-            if md.uv_layers.active:
-                for loop_idx in f.loop_indices:
-                    uv_coords = md.uv_layers.active.data[loop_idx].uv
-                    uv_map.append(uv_coords)
-            '''
-
-            # Filter duplicated vertices
-            if not (vertex in mesh.vertex_list):
-                mesh.vertex_list.append(vertex)
-                print("Append vertex: ", vertex)
-                v_idx = len(mesh.vertex_list) - 1
-                face.append(v_idx)
-            else:
-                v_idx = mesh.vertex_list.index(vertex)
-                face.append(v_idx)
-
-
-        # CSV format face creation (invert vertices order)
-        csv_face = []
-        csv_face.append(face[0])
-
-        #if md.uv_layers.active:
-         #   mesh.texcoords_list.append([face[0], uv_map[0].x, uv_map[0].y])
-
-        for i in range(len(face) - 1, 0, -1):
-            csv_face.append(face[i])
-
-            #if md.uv_layers.active:
-             #   mesh.texcoords_list.append([face[i], uv_map[i].x, uv_map[i].y])
-
-        print("Append Face: ", csv_face)
-        mesh.faces_list.append(csv_face)
+        return os.path.join(rel_tex_dir, texture_name)
 
     #---------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------
     def getSelectedMeshes(self):
+
+        # Получаем все выделеные объекты
         objs = bpy.context.selected_objects
 
+        # Список CSV-сеток
         meshes_list = []
 
+        # Перебираем все объекты
         for obj in objs:
+
+            # Если текущий объект сеточный
             if obj.type == 'MESH':
 
-                # CSV mesh creation
                 from .CSV import CSVmesh
 
                 print("Process object: " + obj.name)
 
-                # Get mesh data from object
+                # Берем данные о сетке текущего объекта
                 md = obj.data
-                #if self.use_left_coords_transform:
-                 #   toLeftBasis(md)
 
-                # Sort faces by material index
+                # Сортируем полигоны по индексу используемого материала
                 csv_meshes = {}
                 for f in md.polygons:
                     csv_meshes[f.material_index] = []
 
+                for f in md.polygons:
+                    csv_meshes[f.material_index].append(f)
+
                 print(csv_meshes)
 
-                # Check is exists meshes with material
-                if len(csv_meshes) == 0:
+                # Для кажой группы граней с одинаковым материалом
+                for key, faces in csv_meshes.items():
 
-                    # Single mesh without material
+                    # Создаем новую CSV-сетку
                     mesh = CSVmesh()
+                    mesh.name = "Mesh: " + md.name + "-" + str(key)
 
-                    for f in md.polygons:
-                        mesh.diffuse_color = [255, 255, 255, 255]
-                        mesh.name = "Mesh: " + obj.name + " Material: None"
-                        self.addFaceToMesh(obj, md, f, mesh)
+                    # Перебираем все грани текущей сетки
+                    for f in faces:
+                        # Добавляем грань в сетку
+                        self.addFaceToMesh(md, f, mesh)
 
-                    mesh.is_addFace2 = bpy.types.Object.is_addFace2
-                    meshes_list.append(mesh)
-                else:
+                    #---- Отладочная печать параметров меша в консоль ----
+                    for i, v in enumerate(mesh.vertex_list):
+                        print("Vertex: ", i, " ", v, " Normal: ", mesh.normals_list[i])
 
-                    # Create mesh for each faces sets with same material
-                    for f in md.polygons:
-                        csv_meshes[f.material_index].append(f)
+                    for i, fc in enumerate(mesh.faces_list):
+                        print("Face: ", i, " ", fc)
 
-                    for key, faces in csv_meshes.items():
+                    for i, tx in enumerate(mesh.texcoords_list):
+                        print("Tex. coords: ", i, " ", tx)
 
+                    print("Vertex's indices: ", mesh.vertex_indices)
+                    #------------------------------------------------------
+
+                    # Работаем с материалом
+                    if obj.material_slots:
                         mat = obj.material_slots[key].material
+                        mesh.name += " Material: " + mat.name
 
-                        mesh = CSVmesh()
-                        mesh.name = "Mesh: " + obj.name + " Material: " + mat.name
-
-                        # Diffuse color componets
+                        # Устанавливаем диффузный цвет
                         for c in mat.diffuse_color:
                             mesh.diffuse_color.append(round(c * 255))
 
-                        # Alpha channel
+                        # Устанавливаем альфа-канал
                         if mat.use_transparency:
                             mesh.diffuse_color.append(round(mat.alpha * 255))
+                        else:
+                            mesh.diffuse_color.append(255)
 
-                        # Texture settings
-                        texture_idx = mat.active_texture_index
-                        try:
+                        # Проверяем наличие текстур
+                        if mat.texture_slots:
 
-                            # Get file path from texture's slot
-                            texture_path = mat.texture_slots[texture_idx].texture.image.filepath
-                            # Convert path to absolute OS path
+                            # Берем индекс активной текстуры
+                            tex_idx = mat.active_texture_index
+                            print("Texture index: ", tex_idx)
+
+                            texture_path = mat.texture_slots[tex_idx].texture.image.filepath
                             texture_path = bpy.path.abspath(texture_path)
-                            # Get directory of model file
-                            modelDir = os.path.dirname(self.filepath)
+                            model_dir = os.path.dirname(self.filepath)
 
-                            # Set path for textures
                             if self.use_texture_separate_directory:
-                                filename, file_ext = os.path.splitext(self.filepath)
-                                filename = os.path.basename(filename)
-                                textureName = os.path.basename(texture_path)
-
-                                relTexDir = filename + "-textures"
-                                textureDir = os.path.join(modelDir, relTexDir)
-
-                                # Create directory for textures
-                                if not os.path.exists(textureDir):
-                                    oldmask = os.umask(0)
-                                    print(oldmask)
-                                    os.chdir(modelDir)
-                                    os.makedirs(relTexDir, mode=0o777)
-                                    os.umask(oldmask)
-
-                                # Copy texture to directory
-                                from shutil import copyfile
-                                copyfile(texture_path, os.path.join(textureDir, textureName))
-
-                                mesh.texture_file = os.path.join(relTexDir, textureName)
-                                print("Texture path: " + mesh.texture_file)
+                                mesh.texture_file = self.copyTexture(texture_path, model_dir)
                             else:
-                                # Calcurate texture path
-                                relPath = os.path.relpath(texture_path, modelDir)
-                                print("Texture path: ", relPath)
-                                mesh.texture_file = relPath
+                                rel_path = os.path.relpath(texture_path, model_dir)
+                                mesh.texture_file = rel_path
 
-                        except Exception as ex:
-                            print(ex)
+                            print("Texture path: ", mesh.texture_file)
 
-                        for f in faces:
-                            self.addFaceToMesh(obj, md, f, mesh)
+                    else:
+                        mesh.diffuse_color = [128, 128, 128, 255]
+                        mesh.name += " Material: Undefined"
+                        print("Material is't defined. Applied: ", mesh.diffuse_color)
 
-                        mesh.is_addFace2 = self.use_add_face2
-                        mesh.is_decale = self.use_transparent_decale_color
-
-                        if mesh.is_decale:
-                            mesh.decale_color.append(self.decale_color_red)
-                            mesh.decale_color.append(self.decale_color_green)
-                            mesh.decale_color.append(self.decale_color_blue)
-
-                        meshes_list.append(mesh)
+                    # Добавляем меш в список
+                    meshes_list.append(mesh)
 
                 #if self.use_left_coords_transform:
                  #   toRightBasis(md)
-                self.exportUVmap(md, mesh)
+                #self.exportUVmap(md, mesh)
 
         return meshes_list
 

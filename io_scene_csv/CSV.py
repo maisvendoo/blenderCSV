@@ -15,11 +15,13 @@ class CSVmesh:
     def __init__(self):
         self.name = ""
         self.vertex_list = []
+        self.normals_list = []
+        self.vertex_indices = []
         self.faces_list = []
         self.texcoords_list = []
         self.texture_file = ""
         self.diffuse_color = []
-        self.decale_color = []
+        self.decale_color = [0] * 3
         self.is_decale = False
         self.is_addFace2 = False
         self.ty_max = 1
@@ -510,11 +512,17 @@ class CSVLoader:
             csv_text.append("CreateMeshBuilder,\n")
 
             # Vertices
-            for v in mesh.vertex_list:
+            for v, n in zip(mesh.vertex_list, mesh.normals_list):
                 addVertex = "AddVertex, "
+
                 for coord in v:
                     addVertex = addVertex + str(coord) + ", "
+
+                for coord in n:
+                    addVertex = addVertex + str(coord) + ", "
+
                 csv_text.append(addVertex + "\n")
+
 
             csv_text.append("\n")
 
@@ -550,9 +558,9 @@ class CSVLoader:
                 loadTexture = "LoadTexture, " + mesh.texture_file
                 csv_text.append(loadTexture + "\n")
 
-                for tc in mesh.texcoords_list:
+                for t_idx, tc in enumerate(mesh.texcoords_list):
                     setTextureCoordinates = "SetTextureCoordinates, "
-                    setTextureCoordinates = setTextureCoordinates + str(int(tc[0])) + "," + str(round(tc[1], 3)) + "," + str(round(tc[2], 3)) + ","
+                    setTextureCoordinates = setTextureCoordinates + str(t_idx) + "," + str(round(tc[1], 3)) + "," + str(round(tc[2], 3)) + ","
                     csv_text.append(setTextureCoordinates + "\n")
 
     #---------------------------------------------------------------------------
