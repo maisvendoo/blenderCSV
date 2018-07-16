@@ -267,6 +267,24 @@ class CSVExporter(bpy.types.Operator):
         default = True,
     )
 
+    def exportUVmap(self, md, mesh):
+
+        for i in range(0, len(md.vertices)):
+            mesh.texcoords_list.append([])
+
+        print("Tex. coords: ", len(mesh.texcoords_list))
+
+        for f in md.polygons:
+            for uv_layer in md.uv_layers:
+                for i in f.loop_indices:
+                    uvCoord = uv_layer.data[i].uv
+                    lookupIndex = md.loops[i].vertex_index
+                    texel = [lookupIndex, uvCoord[0], uvCoord[1]]
+                    mesh.texcoords_list[lookupIndex] = texel
+
+
+
+
     #---------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------
@@ -286,6 +304,7 @@ class CSVExporter(bpy.types.Operator):
             matrix = obj.matrix_world
             glob_vert = matrix * scaled_vert
 
+            # Transform to left coordinate system of OpenBVE
             if self.use_left_coords_transform:
                 import mathutils
                 import math
@@ -295,19 +314,19 @@ class CSVExporter(bpy.types.Operator):
                 mat_mirror_y[1][0], mat_mirror_y[1][1], mat_mirror_y[1][2], mat_mirror_y[1][3] = 0, -1, 0, 0
                 mat_mirror_y[2][0], mat_mirror_y[2][1], mat_mirror_y[2][2], mat_mirror_y[2][3] = 0, 0, 1, 0
                 mat_mirror_y[3][0], mat_mirror_y[3][1], mat_mirror_y[3][2], mat_mirror_y[3][3] = 0, 0, 0, 1
-
                 glob_vert = mat_rot * mat_mirror_y * glob_vert
 
             vertex = list(glob_vert)
 
             # Get face's UV-map
 
+            '''
             uv_map = []
             if md.uv_layers.active:
                 for loop_idx in f.loop_indices:
                     uv_coords = md.uv_layers.active.data[loop_idx].uv
                     uv_map.append(uv_coords)
-
+            '''
 
             # Filter duplicated vertices
             if not (vertex in mesh.vertex_list):
@@ -324,14 +343,14 @@ class CSVExporter(bpy.types.Operator):
         csv_face = []
         csv_face.append(face[0])
 
-        if md.uv_layers.active:
-            mesh.texcoords_list.append([face[0], uv_map[0].x, uv_map[0].y])
+        #if md.uv_layers.active:
+         #   mesh.texcoords_list.append([face[0], uv_map[0].x, uv_map[0].y])
 
         for i in range(len(face) - 1, 0, -1):
             csv_face.append(face[i])
 
-            if md.uv_layers.active:
-                mesh.texcoords_list.append([face[i], uv_map[i].x, uv_map[i].y])
+            #if md.uv_layers.active:
+             #   mesh.texcoords_list.append([face[i], uv_map[i].x, uv_map[i].y])
 
         print("Append Face: ", csv_face)
         mesh.faces_list.append(csv_face)
@@ -456,6 +475,7 @@ class CSVExporter(bpy.types.Operator):
 
                 #if self.use_left_coords_transform:
                  #   toRightBasis(md)
+                self.exportUVmap(md, mesh)
 
         return meshes_list
 
