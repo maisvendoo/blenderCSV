@@ -125,44 +125,64 @@ class CSVImporter(bpy.types.Operator):
     #---------------------------------------------------------------------------
     def createMaterial(self, md, mesh):
 
-        # Create new material for object
+        # Создаем материал. Если есть текстура, то используем имя
+        # файла текстуры в качестве имени материала
         if mesh.texture_file != "":
             matName = self.getFileName(mesh.texture_file)
         else:
             matName = md.name;
 
-        # Check is material already exists
+        print("Creation of material: ", matName)
+
+        # Проверяем, существует ли уже такой материал
         mat = bpy.data.materials.get(matName)
 
+        # Если не существует, создаем его заново
         if mat is None:
             mat = bpy.data.materials.new(name=matName)
+            print("New material ", matName, " created")
+        else:
+            print("Material ", matName, " already exists")
+            # проверяем число текстурных слотов в материале
+            if len(mat.texture_slots) == 18:
+                print("WARNING: maximal number of texture slots 18. All textures will deleted")
+                for i, slot in enumerate(mat.texture_slots):
+                    mat.texture_slots.clear(i)
 
-        # Add material to material's slot
+        # Добавляем материал в слот материалов
+        print("Material slots number: ", len(md.materials))
+
         if md.materials:
             md.materials[0] = mat
         else:
             md.materials.append(mat)
 
-        # Set solid color parametres
+        # Задаем параметры диффузного цвета
         if mesh.diffuse_color:
             mat.diffuse_color = (mesh.diffuse_color[0] / 255.0, mesh.diffuse_color[1] / 255.0, mesh.diffuse_color[2] / 255.0)
 
-        # Set alpha channel
+        # Задаем параметры альфа-канала
         if len(mesh.diffuse_color) > 3:
             mat.alpha = float(mesh.diffuse_color[3]) / 255.0
             mat.use_transparency = True
             mat.transparency_method = 'Z_TRANSPARENCY'
 
-        # Tune material texture
+        # Настраиваем текстуру
         if mesh.texture_file != "":
 
+            # Получаем имя каталога модели
             modelDir = os.path.dirname(self.filepath)
+            # Вычисляем абсолютный путь к файлу текстуры
             texImgPath = os.path.join(modelDir, mesh.texture_file)
-            print(texImgPath)
+            # Грузим текстуру
             img = bpy.data.images.load(texImgPath)
 
-            tex = bpy.data.textures.new("tex" + mat.name, 'IMAGE')
+            # Создаем новую текустуру
+            tex = bpy.data.textures.new("tex-" + mat.name, 'IMAGE')
             tex.image = img
+
+            print("Textures slots: ", len(mat.texture_slots))
+
             slot = mat.texture_slots.add()
             slot.texture = tex
             slot.texture_coords = 'UV'
@@ -204,34 +224,35 @@ class CSVImporter(bpy.types.Operator):
 
         from . import CSV
 
-        # Load model from CSV file
+        # Загружаем структуру модели из CSV-файла
         loader = CSV.CSVLoader()
         meshes_list = loader.loadCSV(path, self.use_left_coords_transform)
 
         print("Loaded " + str(len(meshes_list)) + " meshes")
 
-        # Create all objects in Blender's editor
+        # Создаем все объекты, в соответсвии со списком мешей, полученом из CSV
         for m_idx, m in enumerate(meshes_list):
 
-            # Constract object name from file name
+            # Берем имя объекта
             obj_name = self.getFileName(path)
 
-            # Create mesh from CSV geometry data
-            me = bpy.data.meshes.new(obj_name + "-" + str(m_idx))
-            me.from_pydata(m.vertex_list, [], m.faces_list)
-            me.update(calc_edges=True)
+            # Создаем меш объекта, в соответствии с загруженной геометрией
+            md = bpy.data.meshes.new(obj_name + "-" + str(m_idx))
+            md.from_pydata(m.vertex_list, [], m.faces_list)
+            md.update(calc_edges=True)
 
-            # Material creation
-            self.createMaterial(me, m)
+            # Создаем материал
+            self.createMaterial(md, m)
 
-            # UV-map creation
-            self.setUVcoords(me, m)
+            # Создаем UV-развертку
+            self.setUVcoords(md, m)
 
+            # Если надо, выполняем трансформацию в правую СК
             if self.use_left_coords_transform:
-                toRightBasis(me)
+                toRightBasis(md)
 
-            # Create object and link it to scene
-            obj = bpy.data.objects.new(me.name, me)
+            # Содаем объект и добавляем его в сцену
+            obj = bpy.data.objects.new(md.name, md)
             bpy.context.scene.objects.link(obj)
 
         return {'FINISHED'}
