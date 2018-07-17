@@ -21,7 +21,7 @@ class CSVmesh:
         self.texcoords_list = []
         self.texture_file = ""
         self.diffuse_color = []
-        self.decale_color = [0] * 3
+        self.decale_color = []
         self.is_decale = False
         self.is_addFace2 = False
         self.ty_max = 1

@@ -479,6 +479,17 @@ class CSVExporter(bpy.types.Operator):
                         mesh.name += " Material: Undefined"
                         print("Material is't defined. Applied: ", mesh.diffuse_color)
 
+                    # Устанавливаем декаль, если надо
+                    mesh.is_decale = self.use_transparent_decale_color
+
+                    if mesh.is_decale:
+                        mesh.decale_color.append(self.decale_color_red)
+                        mesh.decale_color.append(self.decale_color_green)
+                        mesh.decale_color.append(self.decale_color_blue)
+
+                    # Устанавливаем двойные грани, если надо
+                    mesh.is_addFace2 = self.use_add_face2
+
                     # Переходим к координатам OpenBVE
                     if self.use_left_coords_transform:
                         toLeftBasis(obj, mesh)
