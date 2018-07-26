@@ -161,3 +161,4 @@ class ImportCSV:
             # Содаем объект и добавляем его в сцену
             obj = bpy.data.objects.new(md.name, md)
             bpy.context.scene.objects.link(obj)
+            obj.select = True
