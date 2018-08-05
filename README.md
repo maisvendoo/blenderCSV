@@ -57,7 +57,7 @@ This setting enable by default, but you can disabled it
 
 **Attantion!** In current version decale color applied to all meshes in model
 
-* Copy textures in separated folder - all textures will copired to separated folder, which will created near CSV file and will has name *<model file name>-textures*
+* Copy textures in separated folder - all textures will copired to separated folder, which will created near CSV file and will has name *model file name-textures*
 
 * Press button "OpenBVE model (*.csv)" to export
 * Check result in OpenBVE ObjectViewer
