@@ -38,8 +38,6 @@ This setting enable by default, but you can disabled it
 
 ![](https://habrastorage.org/webt/js/y6/qu/jsy6qumzoanb66n0hq_6e0zifee.png)
 
-**Attation!** CSV commands **Shear** and **ShearAll** do not supported in current version. It will fixed in future version of plugin
-
 ### 2.2. Export from Blender to *.csv
 
 1. Select your model in Blender and switch to **Object Mode**
