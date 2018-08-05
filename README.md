@@ -1,9 +1,28 @@
-# BlenderCSV
-Blender plugin for Import|Export OpenBVE *.csv objects
+# Blender plugin for Import|Export OpenBVE *.csv objects
 
-Import CSV models into Blender
-![](https://habrastorage.org/webt/39/qw/ol/39qwol74z3ok2ogavmoqrxsj8he.png)
+## 1. Installation guide
 
-Export CSV models form Blender
-![](https://habrastorage.org/webt/11/m1/wx/11m1wx6nobqsois0zovyjweyjme.png)
-![](https://habrastorage.org/webt/aj/90/yu/aj90yu138130ieio0cowofhozxw.png)
+* Donwload last release of plugin from [Releases section](https://github.com/maisvendoo/blenderCSV/releases)
+* Open Blender, go from main menu by path File -> User Preferences -> Add-ons
+* Select "Install add-on from file"
+
+![](https://habrastorage.org/webt/kc/y4/dv/kcy4dvv4t-prv5ax-hy_lxahehk.png)
+
+* Choose plugin zip-archive in your filesystem
+
+![](https://habrastorage.org/webt/rf/wj/lr/rfwjlruesl3vqjtrovo7tpnzlcg.png)
+
+* Select checkbox for addon activation
+
+![](https://habrastorage.org/webt/zp/le/pb/zplepbd5-2yii9zd7mzqsszmqow.png)
+
+* Press "Save user setting" for apply changes to next start of Blender
+
+## 2. Using plugin
+
+Now, you can import any *.csv model into Blender workspace. Go to menu File -> Import -> OpenBVE *.csv model
+
+![](https://habrastorage.org/webt/oz/wl/wo/ozwlwoh7nv55fjng8zjg6imq08q.png)
+
+and open your model from filesystem.
+
