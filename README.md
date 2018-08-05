@@ -52,7 +52,7 @@ This setting enable by default, but you can disabled it
 ![](https://habrastorage.org/webt/lf/x_/1h/lfx_1hv9cbinoy2xzid0d_ycziy.png)
 
 * Transform coordinate system - conversion to OpenBVE left hand coordinates. It option enabled by default
-* Use Face2 commnad - all face generation commands wil be convertedn as AddFace2
+* Use Face2 command - all face generation commands will be present in CSV as AddFace2
 * Use decale transparent color - set components for decale color
 
 **Attantion!** In current version decale color applied to all meshes in model
