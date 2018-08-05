@@ -9,7 +9,7 @@ bl_info = {
     "name": "Importer/Exporter OpenBVE CSV models",
     "category": "Import-Export",
     "author": "Dmitry Pritykin",
-    "version": (0, 3, 0),
+    "version": (0, 4, 0),
     "blender": (2, 79, 0)
 }
 

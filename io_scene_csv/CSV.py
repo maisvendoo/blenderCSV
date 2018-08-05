@@ -312,6 +312,72 @@ class CSVLoader:
     # ---------------------------------------------------------------------------
     #
     # ---------------------------------------------------------------------------
+    def MirrorAll(self, command, meshes_list, mesh):
+        for m in meshes_list:
+            self.Mirror(command, m)
+
+        self.Mirror(command, mesh)
+
+    # ---------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------
+    def Shear(self, command, mesh):
+        try:
+            dx = float(command[1])
+            dy = float(command[2])
+            dz = float(command[3])
+
+            sx = float(command[4])
+            sy = float(command[5])
+            sz = float(command[6])
+
+            r = float(command[7])
+        except Exception as ex:
+            print(ex)
+            return
+
+        # normalize vectors
+        d_len = math.sqrt(dx * dx + dy * dy + dz * dz)
+
+        if d_len == 0:
+            return
+
+        dx /= d_len
+        dy /= d_len
+        dz /= d_len
+
+        s_len = math.sqrt(sx * sx + sy * sy + sz * sz)
+
+        if s_len == 0:
+            return
+
+        sx /= s_len
+        sy /= s_len
+        sz /= s_len
+
+        for i, v in enumerate(mesh.vertex_list):
+            tmp = list(v)
+            n = r * (dx * tmp[0] + dy * tmp[1] + dz * tmp[2])
+            tmp[0] += sx * n;
+            tmp[1] += sy * n;
+            tmp[2] += sz * n;
+
+            vertex = tuple(tmp)
+            mesh.vertex_list[i] = vertex
+
+
+    # ---------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------
+    def ShearAll(self, command, meshes_list, mesh):
+        for m in meshes_list:
+            self.Shear(command, m)
+
+        self.Shear(command, mesh)
+
+    # ---------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------
     def toRightBasis(self, meshes_list):
         for m in meshes_list:
             command = [None, '0', '0', '1']
@@ -477,12 +543,22 @@ class CSVLoader:
                 if self.checkCmd(command[0], "MirrorAll"):
                     self.MirrorAll(command, meshes_list, mesh)
 
+                # Shear meshes
+                if self.checkCmd(command[0], "Shear"):
+                    self.Shear(command, mesh)
+
+                if self.checkCmd(command[0], "ShearAll"):
+                    self.ShearAll(command, meshes_list, mesh)
+
+                # Load textures
                 if self.checkCmd(command[0], "LoadTexture"):
                     self.loadTexture(command, mesh)
 
+                # Set diffuse color
                 if self.checkCmd(command[0], "SetColor"):
                     self.setColor(command, mesh)
 
+                # Set texture coordinates
                 if self.checkCmd(command[0], "SetTextureCoordinates"):
                     self.setTextureCoordinates(command, mesh)
 
