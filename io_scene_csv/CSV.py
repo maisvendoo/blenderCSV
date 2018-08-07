@@ -40,7 +40,12 @@ class CSVLoader:
     #
     #---------------------------------------------------------------------------
     def parseLine(self, line):
-        tmp = line.rstrip('\n').rstrip('\r').rstrip(' ').split(",")
+        tmp = line.rstrip('\n').rstrip('\r').split(",")
+
+        for i, token in enumerate(tmp):
+            str = token.strip(' ')
+            tmp[i] = str
+
         return tmp
 
     #---------------------------------------------------------------------------
@@ -405,7 +410,7 @@ class CSVLoader:
     #
     #---------------------------------------------------------------------------
     def loadTexture(self, command, mesh):
-        mesh.texture_file = command[1].replace(" ", "")
+        mesh.texture_file = command[1]
 
     #---------------------------------------------------------------------------
     #
