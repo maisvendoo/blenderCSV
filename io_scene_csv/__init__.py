@@ -132,6 +132,13 @@ class CSVExporter(bpy.types.Operator):
     #-------------------------------------------------------------------------------
     def execute(self, context):
 
+        if bpy.context.mode != 'OBJECT':
+            print("Please switch to Object Mode.")
+            def draw_context(self, context):
+                self.layout.label("Please switch to Object Mode.")
+            bpy.context.window_manager.popup_menu(draw_context, title = "Export CSV", icon = 'ERROR')
+            return {'FINISHED'}
+
         path = self.filepath
         print("Export model to file: " + path)
 
