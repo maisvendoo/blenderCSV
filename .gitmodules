@@ -1,0 +1,4 @@
+[submodule "io_scene_csv/chardet"]
+	path = io_scene_csv/chardet
+	url = https://github.com/chardet/chardet
+	branch = stable
