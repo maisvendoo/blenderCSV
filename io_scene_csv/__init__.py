@@ -166,7 +166,7 @@ class CsvMeshProperties(bpy.types.PropertyGroup):
     )
 
     emissive_color = bpy.props.FloatVectorProperty(
-        name="SetEmissiveColor's value",
+        name="Color",
         description="Set SetEmissiveColor command's Red, Green and Blue",
         default=(0.0, 0.0, 0.0),
         min=0.0,
@@ -176,13 +176,13 @@ class CsvMeshProperties(bpy.types.PropertyGroup):
 
     blend_mode = bpy.props.EnumProperty(
         items=(("Normal", "Normal", ""), ("Additive", "Additive", "")),
-        name="Set BlendMode",
+        name="BlendMode",
         description="Set SetBlendMode command's BlendMode",
         default="Normal"
     )
 
     glow_half_distance = bpy.props.IntProperty(
-        name="Set GlowHalfDistance",
+        name="GlowHalfDistance",
         description="Set SetBlendMode command's GlowHalfDistance",
         default=0,
         min=0,
@@ -191,7 +191,7 @@ class CsvMeshProperties(bpy.types.PropertyGroup):
 
     glow_attenuation_mode = bpy.props.EnumProperty(
         items=(("DivideExponent2", "DivideExponent2", ""), ("DivideExponent4", "DivideExponent4", "")),
-        name="Set GlowAttenuationMode",
+        name="GlowAttenuationMode",
         description="Set SetBlendMode command's GlowAttenuationMode",
         default="DivideExponent4"
     )
@@ -203,7 +203,7 @@ class CsvMeshProperties(bpy.types.PropertyGroup):
     )
 
     transparent_color = bpy.props.FloatVectorProperty(
-        name="SetDecalTransparentColor's value",
+        name="Color",
         description="Set SetDecalTransparentColor command's Red, Green and Blue",
         default=(0.0, 0.0, 0.0),
         min=0.0,
@@ -224,11 +224,17 @@ class CsvMeshPanel(bpy.types.Panel):
 
     def draw(self, context):
         self.layout.prop(context.object.csv_props, "use_add_face2")
+        self.layout.separator()
+        self.layout.label("SetEmissiveColor:")
         self.layout.prop(context.object.csv_props, "use_emissive_color")
         self.layout.prop(context.object.csv_props, "emissive_color")
+        self.layout.separator()
+        self.layout.label("SetBlendMode:")
         self.layout.prop(context.object.csv_props, "blend_mode")
         self.layout.prop(context.object.csv_props, "glow_half_distance")
         self.layout.prop(context.object.csv_props, "glow_attenuation_mode")
+        self.layout.separator()
+        self.layout.label("SetDecalTransparentColor:")
         self.layout.prop(context.object.csv_props, "use_transparent_color")
         self.layout.prop(context.object.csv_props, "transparent_color")
 
