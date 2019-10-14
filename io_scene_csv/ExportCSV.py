@@ -144,12 +144,12 @@ class ExportCsv:
                 # Set options to mesh
                 mesh.use_add_face2 = obj.csv_props.use_add_face2
                 mesh.use_emissive_color = obj.csv_props.use_emissive_color
-                mesh.emissive_color = obj.csv_props.emissive_color
+                mesh.emissive_color = (round(obj.csv_props.emissive_color[0] * 255), round(obj.csv_props.emissive_color[1] * 255), round(obj.csv_props.emissive_color[2] * 255))
                 mesh.blend_mode = obj.csv_props.blend_mode
                 mesh.glow_half_distance = obj.csv_props.glow_half_distance
                 mesh.glow_attenuation_mode = obj.csv_props.glow_attenuation_mode
                 mesh.use_transparent_color = obj.csv_props.use_transparent_color
-                mesh.transparent_color = obj.csv_props.transparent_color
+                mesh.transparent_color = (round(obj.csv_props.transparent_color[0] * 255), round(obj.csv_props.transparent_color[1] * 255), round(obj.csv_props.transparent_color[2] * 255))
 
                 # Finalize
                 meshes_list.append(mesh)

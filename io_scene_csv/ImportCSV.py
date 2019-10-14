@@ -134,11 +134,11 @@ class ImportCsv:
 
             obj.csv_props.use_add_face2 = meshes_list[i].use_add_face2
             obj.csv_props.use_emissive_color = meshes_list[i].use_emissive_color
-            obj.csv_props.emissive_color = meshes_list[i].emissive_color
+            obj.csv_props.emissive_color = (meshes_list[i].emissive_color[0] * self.INV255, meshes_list[i].emissive_color[1] * self.INV255, meshes_list[i].emissive_color[2] * self.INV255)
             obj.csv_props.blend_mode = meshes_list[i].blend_mode
             obj.csv_props.glow_half_distance = meshes_list[i].glow_half_distance
             obj.csv_props.glow_attenuation_mode = meshes_list[i].glow_attenuation_mode
             obj.csv_props.use_transparent_color = meshes_list[i].use_transparent_color
-            obj.csv_props.transparent_color = meshes_list[i].transparent_color
+            obj.csv_props.transparent_color = (meshes_list[i].transparent_color[0] * self.INV255, meshes_list[i].transparent_color[1] * self.INV255, meshes_list[i].transparent_color[2] * self.INV255)
 
             bpy.context.scene.objects.link(obj)

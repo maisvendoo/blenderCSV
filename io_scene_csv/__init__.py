@@ -165,12 +165,12 @@ class CsvMeshProperties(bpy.types.PropertyGroup):
         default=False
     )
 
-    emissive_color = bpy.props.IntVectorProperty(
+    emissive_color = bpy.props.FloatVectorProperty(
         name="SetEmissiveColor's value",
         description="Set SetEmissiveColor command's Red, Green and Blue",
-        default=(0, 0, 0),
-        min=0,
-        max=255,
+        default=(0.0, 0.0, 0.0),
+        min=0.0,
+        max=1.0,
         subtype="COLOR"
     )
 
@@ -202,12 +202,12 @@ class CsvMeshProperties(bpy.types.PropertyGroup):
         default=False
     )
 
-    transparent_color = bpy.props.IntVectorProperty(
+    transparent_color = bpy.props.FloatVectorProperty(
         name="SetDecalTransparentColor's value",
         description="Set SetDecalTransparentColor command's Red, Green and Blue",
-        default=(0, 0, 0),
-        min=0,
-        max=255,
+        default=(0.0, 0.0, 0.0),
+        min=0.0,
+        max=1.0,
         subtype="COLOR"
     )
 
