@@ -17,6 +17,7 @@
 
 import bpy
 import pathlib
+import mathutils
 from . import CSV
 from . import logger
 from . import Transform
@@ -126,7 +127,7 @@ class ImportCsv:
             self.set_texcoords(meshes_list[i], blender_mesh)
 
             if use_transform_coords:
-                Transform.swap_coordinate_system(blender_mesh)
+                Transform.swap_coordinate_system(mathutils.Matrix.identity(), blender_mesh)
 
             obj = bpy.data.objects.new(blender_mesh.name, blender_mesh)
             bpy.context.scene.objects.link(obj)

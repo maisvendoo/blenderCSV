@@ -21,11 +21,11 @@ import mathutils
 from typing import Union
 
 
-def swap_coordinate_system(mesh: Union[bpy.types.Mesh, bmesh.types.BMesh]) -> None:
-    mat = mathutils.Matrix()
-    mat[0][0], mat[0][1], mat[0][2], mat[0][3] = 1, 0, 0, 0
-    mat[1][0], mat[1][1], mat[1][2], mat[1][3] = 0, 0, 1, 0
-    mat[2][0], mat[2][1], mat[2][2], mat[2][3] = 0, 1, 0, 0
-    mat[3][0], mat[3][1], mat[3][2], mat[3][3] = 0, 0, 0, 1
+def swap_coordinate_system(matrix_world: mathutils.Matrix, mesh: Union[bpy.types.Mesh, bmesh.types.BMesh]) -> None:
+    swap_mat = mathutils.Matrix()
+    swap_mat[0][0], swap_mat[0][1], swap_mat[0][2], swap_mat[0][3] = 1, 0, 0, 0
+    swap_mat[1][0], swap_mat[1][1], swap_mat[1][2], swap_mat[1][3] = 0, 0, 1, 0
+    swap_mat[2][0], swap_mat[2][1], swap_mat[2][2], swap_mat[2][3] = 0, 1, 0, 0
+    swap_mat[3][0], swap_mat[3][1], swap_mat[3][2], swap_mat[3][3] = 0, 0, 0, 1
 
-    mesh.transform(mat)
+    mesh.transform(swap_mat * matrix_world)

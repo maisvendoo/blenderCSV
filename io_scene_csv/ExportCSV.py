@@ -71,7 +71,7 @@ class ExportCsv:
             blender_mesh.from_mesh(obj.data)
 
             if self.option.use_transform_coords:
-                Transform.swap_coordinate_system(blender_mesh)
+                Transform.swap_coordinate_system(obj.matrix_world, blender_mesh)
 
             # Group faces by material index.
             blender_faces = {}  # type: Dict[int, List[bmesh.types.BMFace]]
@@ -109,14 +109,15 @@ class ExportCsv:
                     mesh.faces_list.append(tuple(indices))
 
                 # Add texcoords to mesh
-                for face in faces:
-                    for loop in face.loops:
-                        vertex_index = blender_vertices.index(loop.vert)
-                        uv = loop[blender_mesh.loops.layers.uv.active].uv
-                        texcoords = (vertex_index, uv[0], 1.0 - uv[1])
+                if blender_mesh.loops.layers.uv.active is not None:
+                    for face in faces:
+                        for loop in face.loops:
+                            vertex_index = blender_vertices.index(loop.vert)
+                            uv = loop[blender_mesh.loops.layers.uv.active].uv
+                            texcoords = (vertex_index, uv[0], 1.0 - uv[1])
 
-                        if texcoords not in mesh.texcoords_list:
-                            mesh.texcoords_list.append(texcoords)
+                            if texcoords not in mesh.texcoords_list:
+                                mesh.texcoords_list.append(texcoords)
 
                 # Add material to mesh
                 if m_idx < len(obj.material_slots):
