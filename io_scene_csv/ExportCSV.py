@@ -70,7 +70,8 @@ class ExportCsv:
             blender_mesh = bmesh.new()
             blender_mesh.from_mesh(obj.data)
 
-            Transform.swap_coordinate_system(blender_mesh)
+            if self.option.use_transform_coords:
+                Transform.swap_coordinate_system(blender_mesh)
 
             # Group faces by material index.
             blender_faces = {}  # type: Dict[int, List[bmesh.types.BMFace]]
@@ -128,7 +129,7 @@ class ExportCsv:
                     # Add texture to mesh
                     if mat.active_texture_index < len(mat.texture_slots):
                         if mat.texture_slots[mat.active_texture_index] is not None and type(mat.texture_slots[mat.active_texture_index].texture) is bpy.types.ImageTexture:
-                            texture_path = pathlib.Path(mat.texture_slots[mat.active_texture_index].texture.image.filepath).resolve()
+                            texture_path = pathlib.Path(bpy.path.abspath(mat.texture_slots[mat.active_texture_index].texture.image.filepath)).resolve()
                             model_dir = pathlib.Path(self.file_path).parent
 
                             if self.option.use_copy_texture_separate_directory:
