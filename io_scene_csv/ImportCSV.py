@@ -28,6 +28,7 @@ class ImportCsv:
 
     def __init__(self):
         self.file_path = ""
+        self.option = CSV.ImportOption()
 
     def get_same_material(self, csv_mesh: CSV.CsvMesh, mat_name: str) -> bpy.types.Material:
         mat = bpy.data.materials.get(mat_name)
@@ -98,10 +99,10 @@ class ImportCsv:
 
                 blender_mesh.uv_layers["default"].data[loop_idx].uv = [texcoords[1], 1.0 - texcoords[2]]
 
-    def import_model(self, file_path: str, use_transform_coords: bool) -> None:
+    def import_model(self, file_path: str) -> None:
         self.file_path = file_path
 
-        meshes_list = CSV.CsvObject().load_csv(file_path)
+        meshes_list = CSV.CsvObject().load_csv(self.option, file_path)
 
         logger.info("Loaded meshes: " + str(len(meshes_list)))
 
@@ -126,7 +127,7 @@ class ImportCsv:
 
             self.set_texcoords(meshes_list[i], blender_mesh)
 
-            if use_transform_coords:
+            if self.option.use_transform_coords:
                 Transform.swap_coordinate_system(mathutils.Matrix.Identity(4), blender_mesh)
 
             obj = bpy.data.objects.new(blender_mesh.name, blender_mesh)

@@ -40,6 +40,12 @@ class CsvMesh:
         self.texcoords_list = []  # type: List[Tuple[int, float, float]]
 
 
+class ImportOption:
+    def __init__(self):
+        self.use_transform_coords = True
+        self.use_split_add_face2 = False
+
+
 class ExportOption:
     def __init__(self):
         self.use_transform_coords = True
@@ -188,7 +194,7 @@ class CsvObject:
         factor = 1.0 / math.sqrt(norm)
         return (v[0] * factor, v[1] * factor, v[2] * factor)
 
-    def load_csv(self, file_path: str) -> List[CsvMesh]:
+    def load_csv(self, option: ImportOption, file_path: str) -> List[CsvMesh]:
         meshes_list = []  # type: List[CsvMesh]
 
         logger.info("Loading file: " + file_path)
@@ -351,7 +357,10 @@ class CsvObject:
                         mesh.faces_list.append(tuple(reversed(a)))
 
                         if command.lower() == "AddFace2".lower():
-                            mesh.faces_list.append(tuple(a))
+                            if option.use_split_add_face2:
+                                mesh.faces_list.append(tuple(a))
+                            else:
+                                mesh.use_add_face2 = True
 
             elif command.lower() == "Cube".lower():
                 if len(arguments) > 3:
