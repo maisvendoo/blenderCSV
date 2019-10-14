@@ -58,11 +58,9 @@ class ImportCsv:
             logger.debug("Create new material: " + mat_name)
             mat = bpy.data.materials.new(mat_name)
             mat.diffuse_color = (csv_mesh.diffuse_color[0] * self.INV255, csv_mesh.diffuse_color[1] * self.INV255, csv_mesh.diffuse_color[2] * self.INV255)
-
-            if csv_mesh.diffuse_color[3] != 255:
-                mat.alpha = csv_mesh.diffuse_color[3] * self.INV255
-                mat.use_transparency = True
-                mat.transparency_method = "Z_TRANSPARENCY"
+            mat.alpha = csv_mesh.diffuse_color[3] * self.INV255
+            mat.transparency_method = "Z_TRANSPARENCY"
+            mat.use_transparency = csv_mesh.diffuse_color[3] != 255
 
             # Set the texture on the material.
             if csv_mesh.texture_file != "":
@@ -77,6 +75,11 @@ class ImportCsv:
                 slot.texture = texture
                 slot.texture_coords = "UV"
                 slot.uv_layer = "default"
+                slot.use_map_color_diffuse = True
+                slot.use_map_alpha = True
+                slot.alpha_factor = mat.alpha
+                mat.alpha = 0.0
+                mat.use_transparency = True
 
         # Set the material on the mesh.
         blender_mesh.materials.append(mat)

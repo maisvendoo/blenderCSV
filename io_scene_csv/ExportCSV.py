@@ -127,7 +127,7 @@ class ExportCsv:
 
                     # Add texture to mesh
                     if mat.active_texture_index < len(mat.texture_slots):
-                        if type(mat.texture_slots[mat.active_texture_index].texture) is bpy.types.ImageTexture:
+                        if mat.texture_slots[mat.active_texture_index] is not None and type(mat.texture_slots[mat.active_texture_index].texture) is bpy.types.ImageTexture:
                             texture_path = pathlib.Path(mat.texture_slots[mat.active_texture_index].texture.image.filepath).resolve()
                             model_dir = pathlib.Path(self.file_path).parent
 
