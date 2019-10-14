@@ -17,7 +17,7 @@
 
 import bpy
 import pathlib
-from . import Csv
+from . import CSV
 from . import logger
 from . import Transform
 
@@ -28,7 +28,7 @@ class ImportCsv:
     def __init__(self):
         self.file_path = ""
 
-    def get_same_material(self, csv_mesh: Csv.CsvMesh, mat_name: str) -> bpy.types.Material:
+    def get_same_material(self, csv_mesh: CSV.CsvMesh, mat_name: str) -> bpy.types.Material:
         mat = bpy.data.materials.get(mat_name)
 
         if mat is None:
@@ -43,7 +43,7 @@ class ImportCsv:
 
         return mat
 
-    def create_material(self, csv_mesh: Csv.CsvMesh, blender_mesh: bpy.types.Mesh) -> None:
+    def create_material(self, csv_mesh: CSV.CsvMesh, blender_mesh: bpy.types.Mesh) -> None:
         # Decide the name of the material. If a texture file exists, use that file name.
         if csv_mesh.texture_file != "":
             mat_name = pathlib.Path(csv_mesh.texture_file).stem
@@ -81,7 +81,7 @@ class ImportCsv:
         # Set the material on the mesh.
         blender_mesh.materials.append(mat)
 
-    def set_texcoords(self, csv_mesh: Csv.CsvMesh, blender_mesh: bpy.types.Mesh) -> None:
+    def set_texcoords(self, csv_mesh: CSV.CsvMesh, blender_mesh: bpy.types.Mesh) -> None:
         blender_mesh.uv_textures.new("default")
 
         for face in blender_mesh.polygons:
@@ -97,7 +97,7 @@ class ImportCsv:
     def import_model(self, file_path: str, use_transform_coords: bool) -> None:
         self.file_path = file_path
 
-        meshes_list = Csv.CsvObject().load_csv(file_path)
+        meshes_list = CSV.CsvObject().load_csv(file_path)
 
         logger.info("Loaded meshes: " + str(len(meshes_list)))
 

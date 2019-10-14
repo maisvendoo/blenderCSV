@@ -69,8 +69,8 @@ class CsvImporter(bpy.types.Operator):
     def execute(self, context):
         logger.setLevel(self.use_loggingLevel)
         logger.info("Import started.")
-        from . import ImportCsv
-        ImportCsv.ImportCsv().import_model(self.filepath, self.use_transform_coords)
+        from . import ImportCSV
+        ImportCSV.ImportCsv().import_model(self.filepath, self.use_transform_coords)
         logger.info("Import completed.")
         return {"FINISHED"}
 
@@ -196,8 +196,8 @@ class CsvExporter(bpy.types.Operator):
         logger.setLevel(self.use_loggingLevel)
         logger.info("Export started.")
 
-        from . import ExportCsv
-        exporter = ExportCsv.ExportCsv()
+        from . import ExportCSV
+        exporter = ExportCSV.ExportCsv()
 
         exporter.option.use_transform_coords = self.use_transform_coords
         exporter.option.global_mesh_scale = self.global_mesh_scale

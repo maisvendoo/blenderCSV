@@ -22,7 +22,7 @@ import pathlib
 import os
 import shutil
 from typing import List, Dict
-from . import Csv
+from . import CSV
 from . import logger
 from . import Transform
 
@@ -30,7 +30,7 @@ from . import Transform
 class ExportCsv:
     def __init__(self):
         self.file_path = ""
-        self.option = Csv.ExportOption()
+        self.option = CSV.ExportOption()
 
     def copy_texture_separate_directory(self, model_dir: pathlib.PurePath, texture_path: pathlib.PurePath) -> str:
         rel_texture_dir = pathlib.Path(self.file_path).stem + "-textures"
@@ -57,7 +57,7 @@ class ExportCsv:
     def export_model(self, file_path: str) -> None:
         self.file_path = file_path
 
-        meshes_list = []  # type: List[Csv.CsvMesh]
+        meshes_list = []  # type: List[CSV.CsvMesh]
 
         object_list = bpy.context.selected_objects
 
@@ -83,7 +83,7 @@ class ExportCsv:
 
             for m_idx, faces in blender_faces.items():
                 # Create a new CsvMesh.
-                mesh = Csv.CsvMesh()
+                mesh = CSV.CsvMesh()
                 mesh.name = "Mesh: " + obj.data.name
 
                 # Add vertices to mesh
@@ -142,4 +142,4 @@ class ExportCsv:
                 # Finalize
                 meshes_list.append(mesh)
 
-        Csv.CsvObject().export_csv(self.option, meshes_list, self.file_path)
+        CSV.CsvObject().export_csv(self.option, meshes_list, self.file_path)
