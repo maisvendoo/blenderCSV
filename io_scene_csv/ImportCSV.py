@@ -130,5 +130,15 @@ class ImportCsv:
                 Transform.swap_coordinate_system(mathutils.Matrix.identity(), blender_mesh)
 
             obj = bpy.data.objects.new(blender_mesh.name, blender_mesh)
-            bpy.context.scene.objects.link(obj)
             obj.select = True
+
+            obj.csv_props.use_add_face2 = meshes_list[i].use_add_face2
+            obj.csv_props.use_emissive_color = meshes_list[i].use_emissive_color
+            obj.csv_props.emissive_color = meshes_list[i].emissive_color
+            obj.csv_props.blend_mode = meshes_list[i].blend_mode
+            obj.csv_props.glow_half_distance = meshes_list[i].glow_half_distance
+            obj.csv_props.glow_attenuation_mode = meshes_list[i].glow_attenuation_mode
+            obj.csv_props.use_transparent_color = meshes_list[i].use_transparent_color
+            obj.csv_props.transparent_color = meshes_list[i].transparent_color
+
+            bpy.context.scene.objects.link(obj)

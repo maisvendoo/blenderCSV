@@ -116,6 +116,43 @@ class CsvExporter(bpy.types.Operator):
         default=True
     )
 
+    use_copy_texture_separate_directory = bpy.props.BoolProperty(
+        name="Copy textures in separate folder",
+        description="Copied textures in directory near *.csv file. Directory name will be: <model name>-textures",
+        default=True
+    )
+
+    def invoke(self, context, event):
+        self.filepath = "undefined" + self.filename_ext
+        context.window_manager.fileselect_add(self)
+        return {"RUNNING_MODAL"}
+
+    def execute(self, context):
+        if bpy.context.mode != "OBJECT":
+            def draw_context(self, context):
+                self.layout.label("Please switch to Object Mode.")
+
+            bpy.context.window_manager.popup_menu(draw_context, title="Export CSV", icon="ERROR")
+            return {"FINISHED"}
+
+        logger.setLevel(self.use_loggingLevel)
+        logger.info("Export started.")
+
+        from . import ExportCSV
+        exporter = ExportCSV.ExportCsv()
+
+        exporter.option.use_transform_coords = self.use_transform_coords
+        exporter.option.global_mesh_scale = self.global_mesh_scale
+        exporter.option.use_normals = self.use_normals
+        exporter.option.use_copy_texture_separate_directory = self.use_copy_texture_separate_directory
+
+        exporter.export_model(self.filepath)
+
+        logger.info("Export completed.")
+        return {"FINISHED"}
+
+
+class CsvMeshProperties(bpy.types.PropertyGroup):
     use_add_face2 = bpy.props.BoolProperty(
         name="Use AddFace2",
         description="Use AddFace2 command for generate faces in OpenBVE",
@@ -159,12 +196,6 @@ class CsvExporter(bpy.types.Operator):
         default="DivideExponent4"
     )
 
-    use_copy_texture_separate_directory = bpy.props.BoolProperty(
-        name="Copy textures in separate folder",
-        description="Copied textures in directory near *.csv file. Directory name will be: <model name>-textures",
-        default=True
-    )
-
     use_transparent_color = bpy.props.BoolProperty(
         name="Use SetDecalTransparentColor",
         description="Use SetDecalTransparentColor command",
@@ -180,42 +211,26 @@ class CsvExporter(bpy.types.Operator):
         subtype="COLOR"
     )
 
-    def invoke(self, context, event):
-        self.filepath = "undefined" + self.filename_ext
-        context.window_manager.fileselect_add(self)
-        return {"RUNNING_MODAL"}
 
-    def execute(self, context):
-        if bpy.context.mode != "OBJECT":
-            def draw_context(self, context):
-                self.layout.label("Please switch to Object Mode.")
+class CsvMeshPanel(bpy.types.Panel):
+    bl_label = "Additional properties for CSV mesh"
+    bl_context = "object"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
 
-            bpy.context.window_manager.popup_menu(draw_context, title="Export CSV", icon="ERROR")
-            return {"FINISHED"}
+    @classmethod
+    def poll(cls, context):
+        return context.object and context.object.type == "MESH"
 
-        logger.setLevel(self.use_loggingLevel)
-        logger.info("Export started.")
-
-        from . import ExportCSV
-        exporter = ExportCSV.ExportCsv()
-
-        exporter.option.use_transform_coords = self.use_transform_coords
-        exporter.option.global_mesh_scale = self.global_mesh_scale
-        exporter.option.use_normals = self.use_normals
-        exporter.option.use_add_face2 = self.use_add_face2
-        exporter.option.use_emissive_color = self.use_emissive_color
-        exporter.option.emissive_color = self.emissive_color
-        exporter.option.blend_mode = self.blend_mode
-        exporter.option.glow_half_distance = self.glow_half_distance
-        exporter.option.glow_attenuation_mode = self.glow_attenuation_mode
-        exporter.option.use_copy_texture_separate_directory = self.use_copy_texture_separate_directory
-        exporter.option.use_transparent_color = self.use_transparent_color
-        exporter.option.transparent_color = self.transparent_color
-
-        exporter.export_model(self.filepath)
-
-        logger.info("Export completed.")
-        return {"FINISHED"}
+    def draw(self, context):
+        self.layout.prop(context.object.csv_props, "use_add_face2")
+        self.layout.prop(context.object.csv_props, "use_emissive_color")
+        self.layout.prop(context.object.csv_props, "emissive_color")
+        self.layout.prop(context.object.csv_props, "blend_mode")
+        self.layout.prop(context.object.csv_props, "glow_half_distance")
+        self.layout.prop(context.object.csv_props, "glow_attenuation_mode")
+        self.layout.prop(context.object.csv_props, "use_transparent_color")
+        self.layout.prop(context.object.csv_props, "transparent_color")
 
 
 def menu_import(self, context):
@@ -227,19 +242,29 @@ def menu_export(self, context):
 
 
 def register():
-    bpy.types.INFO_MT_file_import.append(menu_import)
     bpy.utils.register_class(CsvImporter)
+    bpy.types.INFO_MT_file_import.append(menu_import)
 
-    bpy.types.INFO_MT_file_export.append(menu_export)
     bpy.utils.register_class(CsvExporter)
+    bpy.types.INFO_MT_file_export.append(menu_export)
+
+    bpy.utils.register_class(CsvMeshProperties)
+    bpy.types.Object.csv_props = bpy.props.PointerProperty(type=CsvMeshProperties)
+
+    bpy.utils.register_class(CsvMeshPanel)
 
 
 def unregister():
-    bpy.types.INFO_MT_file_import.remove(menu_import)
     bpy.utils.unregister_class(CsvImporter)
+    bpy.types.INFO_MT_file_import.remove(menu_import)
 
-    bpy.types.INFO_MT_file_export.remove(menu_export)
     bpy.utils.unregister_class(CsvExporter)
+    bpy.types.INFO_MT_file_export.remove(menu_export)
+
+    bpy.utils.unregister_class(CsvMeshProperties)
+    del bpy.types.Object.csv_props
+
+    bpy.utils.unregister_class(CsvMeshPanel)
 
 
 if __name__ == "__main__":

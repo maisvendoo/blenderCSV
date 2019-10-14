@@ -26,9 +26,17 @@ class CsvMesh:
         self.name = ""
         self.vertex_list = []   # type: List[Tuple[float, float, float]]
         self.normals_list = []   # type: List[Tuple[float, float, float]]
+        self.use_add_face2 = False
         self.faces_list = []  # type: List[Tuple[int, ...]]
         self.diffuse_color = (255, 255, 255, 255)  # type: Tuple[int, int, int, int]
+        self.use_emissive_color = False
+        self.emissive_color = (0, 0, 0)  # type: Tuple[int, int, int]
+        self.blend_mode = "Normal"
+        self.glow_half_distance = 0
+        self.glow_attenuation_mode = "DivideExponent4"
         self.texture_file = ""
+        self.use_transparent_color = False
+        self.transparent_color = (0, 0, 0)  # type: Tuple[int, int, int]
         self.texcoords_list = []  # type: List[Tuple[int, float, float]]
 
 
@@ -37,15 +45,7 @@ class ExportOption:
         self.use_transform_coords = True
         self.global_mesh_scale = 1.0
         self.use_normals = True
-        self.use_add_face2 = False
-        self.use_emissive_color = False
-        self.emissive_color = (0, 0, 0)  # type: Tuple[int, int, int]
-        self.blend_mode = "Normal"
-        self.glow_half_distance = 0
-        self.glow_attenuation_mode = "DivideExponent4"
         self.use_copy_texture_separate_directory = True
-        self.use_transparent_color = False
-        self.transparent_color = (0, 0, 0)  # type: Tuple[int, int, int]
 
 
 class CsvObject:
@@ -658,6 +658,112 @@ class CsvObject:
 
                 mesh.diffuse_color = (red, green, blue, alpha)
 
+            elif command.lower() == "SetEmissiveColor".lower():
+                if len(arguments) > 3:
+                    logger.warning("At most 3 arguments are expected in " + command + " at line " + str(i + 1))
+
+                try:
+                    red = int(arguments[0])
+                except Exception:
+                    logger.error("Invalid argument Red in " + command + " at line " + str(i + 1))
+                    red = 0
+
+                if red < 0 or red > 255:
+                    logger.error("Red is required to be within the range from 0 to 255 in " + command + " at line " + str(i + 1))
+                    red = 0 if red < 0 else 255
+
+                try:
+                    green = int(arguments[1])
+                except Exception:
+                    logger.error("Invalid argument Green in " + command + " at line " + str(i + 1))
+                    green = 0
+
+                if green < 0 or green > 255:
+                    logger.error("Green is required to be within the range from 0 to 255 in " + command + " at line " + str(i + 1))
+                    green = 0 if green < 0 else 255
+
+                try:
+                    blue = int(arguments[2])
+                except Exception:
+                    logger.error("Invalid argument Blue in " + command + " at line " + str(i + 1))
+                    blue = 0
+
+                if blue < 0 or blue > 255:
+                    logger.error("Blue is required to be within the range from 0 to 255 in " + command + " at line " + str(i + 1))
+                    blue = 0 if blue < 0 else 255
+
+                mesh.use_emissive_color = True
+                mesh.emissive_color = (red, green, blue)
+
+            elif command.lower() == "SetDecalTransparentColor".lower():
+                if len(arguments) > 3:
+                    logger.warning("At most 3 arguments are expected in " + command + " at line " + str(i + 1))
+
+                try:
+                    red = int(arguments[0])
+                except Exception:
+                    logger.error("Invalid argument Red in " + command + " at line " + str(i + 1))
+                    red = 0
+
+                if red < 0 or red > 255:
+                    logger.error("Red is required to be within the range from 0 to 255 in " + command + " at line " + str(i + 1))
+                    red = 0 if red < 0 else 255
+
+                try:
+                    green = int(arguments[1])
+                except Exception:
+                    logger.error("Invalid argument Green in " + command + " at line " + str(i + 1))
+                    green = 0
+
+                if green < 0 or green > 255:
+                    logger.error("Green is required to be within the range from 0 to 255 in " + command + " at line " + str(i + 1))
+                    green = 0 if green < 0 else 255
+
+                try:
+                    blue = int(arguments[2])
+                except Exception:
+                    logger.error("Invalid argument Blue in " + command + " at line " + str(i + 1))
+                    blue = 0
+
+                if blue < 0 or blue > 255:
+                    logger.error("Blue is required to be within the range from 0 to 255 in " + command + " at line " + str(i + 1))
+                    blue = 0 if blue < 0 else 255
+
+                mesh.use_transparent_color = True
+                mesh.transparent_color = (red, green, blue)
+
+            elif command.lower() == "SetBlendMode".lower() or command.lower() == "SetBlendingMode".lower():
+                if len(arguments) > 3:
+                    logger.warning("At most 3 arguments are expected in " + command + " at line " + str(i + 1))
+
+                try:
+                    if arguments[0].lower() == "normal":
+                        mesh.blend_mode = "Normal"
+                    elif arguments[0].lower() == "additive" or arguments[0].lower() == "glow":
+                        mesh.blend_mode = "Additive"
+                    else:
+                        logger.error("The given BlendMode is not supported in " + command + " at line " + str(i + 1))
+                        mesh.blend_mode = "Normal"
+                except Exception:
+                    mesh.blend_mode = "Normal"
+
+                try:
+                    mesh.glow_half_distance = int(arguments[1])
+                except Exception:
+                    logger.error("Invalid argument GlowHalfDistance in " + command + " at line " + str(i + 1))
+                    mesh.glow_half_distance = 0
+
+                try:
+                    if arguments[2].lower() == "DivideExponent2".lower():
+                        mesh.glow_attenuation_mode = "DivideExponent2"
+                    elif arguments[2].lower() == "DivideExponent4".lower():
+                        mesh.glow_attenuation_mode = "DivideExponent4"
+                    else:
+                        logger.error("The given GlowAttenuationMode is not supported in " + command + " at line " + str(i + 1))
+                        mesh.glow_attenuation_mode = "DivideExponent4"
+                except Exception:
+                    mesh.glow_attenuation_mode = "DivideExponent4"
+
             elif command.lower() == "LoadTexture".lower():
                 if len(arguments) > 2:
                     logger.warning("At most 2 arguments are expected in " + command + " at line " + str(i + 1))
@@ -746,7 +852,7 @@ class CsvObject:
                 for vertex_index in reversed(face):
                     face_text += ", " + str(vertex_index)
 
-                if option.use_add_face2:
+                if mesh.use_add_face2:
                     csv_text.append("AddFace2" + face_text + "\n")
                 else:
                     csv_text.append("AddFace" + face_text + "\n")
@@ -755,19 +861,19 @@ class CsvObject:
             csv_text.append("SetColor, " + str(mesh.diffuse_color[0]) + ", " + str(mesh.diffuse_color[1]) + ", " + str(mesh.diffuse_color[2]) + "\n")
 
             # Emissive color
-            if option.use_emissive_color:
-                csv_text.append("SetEmissiveColor, " + str(option.emissive_color[0]) + ", " + str(option.emissive_color[1]) + ", " + str(option.emissive_color[2]) + "\n")
+            if mesh.use_emissive_color:
+                csv_text.append("SetEmissiveColor, " + str(mesh.emissive_color[0]) + ", " + str(mesh.emissive_color[1]) + ", " + str(mesh.emissive_color[2]) + "\n")
 
             # Blend mode
-            csv_text.append("SetBlendMode, " + option.blend_mode + ", " + str(option.glow_half_distance) + ", " + option.glow_attenuation_mode + "\n")
+            csv_text.append("SetBlendMode, " + mesh.blend_mode + ", " + str(mesh.glow_half_distance) + ", " + mesh.glow_attenuation_mode + "\n")
 
             # Texture
             if mesh.texture_file != "":
                 csv_text.append("LoadTexture, " + mesh.texture_file + "\n")
 
             # Transparent color
-            if option.use_transparent_color:
-                csv_text.append("SetDecalTransparentColor, " + str(option.transparent_color[0]) + ", " + str(option.transparent_color[1]) + ", " + str(option.transparent_color[2]) + "\n")
+            if mesh.use_transparent_color:
+                csv_text.append("SetDecalTransparentColor, " + str(mesh.transparent_color[0]) + ", " + str(mesh.transparent_color[1]) + ", " + str(mesh.transparent_color[2]) + "\n")
 
             # Texture coordinates
             for texcoords in mesh.texcoords_list:

@@ -141,6 +141,16 @@ class ExportCsv:
                 else:
                     mesh.name += ", Material: Undefined"
 
+                # Set options to mesh
+                mesh.use_add_face2 = obj.csv_props.use_add_face2
+                mesh.use_emissive_color = obj.csv_props.use_emissive_color
+                mesh.emissive_color = obj.csv_props.emissive_color
+                mesh.blend_mode = obj.csv_props.blend_mode
+                mesh.glow_half_distance = obj.csv_props.glow_half_distance
+                mesh.glow_attenuation_mode = obj.csv_props.glow_attenuation_mode
+                mesh.use_transparent_color = obj.csv_props.use_transparent_color
+                mesh.transparent_color = obj.csv_props.transparent_color
+
                 # Finalize
                 meshes_list.append(mesh)
 
