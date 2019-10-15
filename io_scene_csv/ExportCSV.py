@@ -33,8 +33,7 @@ class ExportCsv:
         self.option = CSV.ExportOption()
 
     def copy_texture_separate_directory(self, model_dir: pathlib.PurePath, texture_path: pathlib.PurePath) -> str:
-        rel_texture_dir = pathlib.Path(self.file_path).stem + "-textures"
-        texture_dir = model_dir.joinpath(rel_texture_dir)
+        texture_dir = model_dir.joinpath(pathlib.Path(self.file_path).stem + "-textures")
 
         try:
             os.makedirs(str(texture_dir), exist_ok=True)
@@ -52,7 +51,7 @@ class ExportCsv:
             logger.critical(ex)
             return str(texture_path)
 
-        return os.path.join(rel_texture_dir, texture_path.name)
+        return str(dest_path)
 
     def export_model(self, file_path: str) -> None:
         self.file_path = file_path
@@ -128,20 +127,29 @@ class ExportCsv:
                     mesh.diffuse_color = (round(mat.diffuse_color[0] * 255), round(mat.diffuse_color[1] * 255), round(mat.diffuse_color[2] * 255), round(mat.alpha * 255) if mat.use_transparency else 255)
 
                     # Add texture to mesh
+                    model_dir = pathlib.Path(self.file_path).parent
+
                     if mat.active_texture_index < len(mat.texture_slots):
                         texture_slot = mat.texture_slots[mat.active_texture_index]
 
                         if texture_slot is not None and type(texture_slot.texture) is bpy.types.ImageTexture:
-                            texture_path = pathlib.Path(bpy.path.abspath(texture_slot.texture.image.filepath)).resolve()
-                            model_dir = pathlib.Path(self.file_path).parent
+                            if texture_slot.texture.image.filepath != "":
+                                texture_path = pathlib.Path(bpy.path.abspath(texture_slot.texture.image.filepath)).resolve()
 
-                            if self.option.use_copy_texture_separate_directory:
-                                mesh.daytime_texture_file = self.copy_texture_separate_directory(model_dir, texture_path)
-                            else:
-                                mesh.daytime_texture_file = os.path.relpath(str(texture_path), str(model_dir))
+                                if self.option.use_copy_texture_separate_directory:
+                                    mesh.daytime_texture_file = self.copy_texture_separate_directory(model_dir, texture_path)
+                                else:
+                                    mesh.daytime_texture_file = str(texture_path)
 
                             mesh.diffuse_color = (mesh.diffuse_color[0], mesh.diffuse_color[1], mesh.diffuse_color[2], round(texture_slot.alpha_factor * 255))
 
+                    if mat.csv_props.nighttime_texture_file != "":
+                        texture_path = pathlib.Path(bpy.path.abspath(mat.csv_props.nighttime_texture_file)).resolve()
+
+                        if self.option.use_copy_texture_separate_directory:
+                            mesh.nighttime_texture_file = self.copy_texture_separate_directory(model_dir, texture_path)
+                        else:
+                            mesh.nighttime_texture_file = str(texture_path)
                 else:
                     mesh.name += ", Material: Undefined"
 
@@ -152,16 +160,6 @@ class ExportCsv:
                 mesh.blend_mode = obj.csv_props.blend_mode
                 mesh.glow_half_distance = obj.csv_props.glow_half_distance
                 mesh.glow_attenuation_mode = obj.csv_props.glow_attenuation_mode
-
-                if obj.csv_props.nighttime_texture_file != "":
-                    texture_path = pathlib.Path(bpy.path.abspath(obj.csv_props.nighttime_texture_file)).resolve()
-                    model_dir = pathlib.Path(self.file_path).parent
-
-                    if self.option.use_copy_texture_separate_directory:
-                        mesh.nighttime_texture_file = self.copy_texture_separate_directory(model_dir, texture_path)
-                    else:
-                        mesh.nighttime_texture_file = os.path.relpath(str(texture_path), str(model_dir))
-
                 mesh.use_transparent_color = obj.csv_props.use_transparent_color
                 mesh.transparent_color = (round(obj.csv_props.transparent_color[0] * 255), round(obj.csv_props.transparent_color[1] * 255), round(obj.csv_props.transparent_color[2] * 255))
 

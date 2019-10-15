@@ -209,13 +209,6 @@ class CsvMeshProperties(bpy.types.PropertyGroup):
         default="DivideExponent4"
     )
 
-    nighttime_texture_file = bpy.props.StringProperty(
-        name="NighttimeTexture",
-        description="Set NighttimeTexture command's LoadTexture",
-        default="",
-        subtype="FILE_PATH"
-    )
-
     use_transparent_color = bpy.props.BoolProperty(
         name="Use SetDecalTransparentColor",
         description="Use SetDecalTransparentColor command",
@@ -229,6 +222,15 @@ class CsvMeshProperties(bpy.types.PropertyGroup):
         min=0.0,
         max=1.0,
         subtype="COLOR"
+    )
+
+
+class CsvMaterialProperties(bpy.types.PropertyGroup):
+    nighttime_texture_file = bpy.props.StringProperty(
+        name="NighttimeTexture",
+        description="Set NighttimeTexture command's LoadTexture",
+        default="",
+        subtype="FILE_PATH"
     )
 
 
@@ -254,12 +256,24 @@ class CsvMeshPanel(bpy.types.Panel):
         self.layout.prop(context.object.csv_props, "glow_half_distance")
         self.layout.prop(context.object.csv_props, "glow_attenuation_mode")
         self.layout.separator()
-        self.layout.label("LoadTexture:")
-        self.layout.prop(context.object.csv_props, "nighttime_texture_file")
-        self.layout.separator()
         self.layout.label("SetDecalTransparentColor:")
         self.layout.prop(context.object.csv_props, "use_transparent_color")
         self.layout.prop(context.object.csv_props, "transparent_color")
+
+
+class CsvMaterialPanel(bpy.types.Panel):
+    bl_label = "Additional properties for CSV mesh"
+    bl_context = "material"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+
+    @classmethod
+    def poll(cls, context):
+        return context.material
+
+    def draw(self, context):
+        self.layout.label("LoadTexture:")
+        self.layout.prop(context.material.csv_props, "nighttime_texture_file")
 
 
 def menu_import(self, context):
@@ -280,7 +294,12 @@ def register():
     bpy.utils.register_class(CsvMeshProperties)
     bpy.types.Object.csv_props = bpy.props.PointerProperty(type=CsvMeshProperties)
 
+    bpy.utils.register_class(CsvMaterialProperties)
+    bpy.types.Material.csv_props = bpy.props.PointerProperty(type=CsvMaterialProperties)
+
     bpy.utils.register_class(CsvMeshPanel)
+
+    bpy.utils.register_class(CsvMaterialPanel)
 
 
 def unregister():
@@ -293,7 +312,12 @@ def unregister():
     bpy.utils.unregister_class(CsvMeshProperties)
     del bpy.types.Object.csv_props
 
+    bpy.utils.unregister_class(CsvMaterialProperties)
+    del bpy.types.Material.csv_props
+
     bpy.utils.unregister_class(CsvMeshPanel)
+
+    bpy.utils.unregister_class(CsvMaterialPanel)
 
 
 if __name__ == "__main__":

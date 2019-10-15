@@ -39,9 +39,26 @@ class ImportCsv:
         if mat.diffuse_color[0] != csv_mesh.diffuse_color[0] * self.INV255 or mat.diffuse_color[1] != csv_mesh.diffuse_color[1] * self.INV255 or mat.diffuse_color[2] != csv_mesh.diffuse_color[2] * self.INV255:
             return None
 
-        if csv_mesh.diffuse_color[3] != 255:
-            if mat.alpha != csv_mesh.diffuse_color[3] * self.INV255:
+        if csv_mesh.daytime_texture_file == "" and mat.alpha != csv_mesh.diffuse_color[3] * self.INV255:
+            return None
+
+        if mat.active_texture_index < len(mat.texture_slots):
+            slot = mat.texture_slots[mat.active_texture_index]
+
+            if slot is None:
                 return None
+
+            if type(slot.texture) is not bpy.types.ImageTexture:
+                return None
+
+            if slot.texture.image.filepath != csv_mesh.daytime_texture_file:
+                return None
+
+            if slot.alpha_factor != csv_mesh.diffuse_color[3] * self.INV255:
+                return None
+
+        if mat.csv_props.nighttime_texture_file != csv_mesh.nighttime_texture_file:
+            return None
 
         return mat
 
@@ -66,12 +83,11 @@ class ImportCsv:
 
             # Set the texture on the material.
             if csv_mesh.daytime_texture_file != "":
-                texture_path = pathlib.Path(self.file_path).joinpath("..", csv_mesh.daytime_texture_file).resolve()
-                texture = bpy.data.textures.get(texture_path.stem)
+                texture = bpy.data.textures.get(mat_name)
 
                 if texture is None:
-                    texture = bpy.data.textures.new(texture_path.stem, "IMAGE")
-                    texture.image = bpy.data.images.load(str(texture_path))
+                    texture = bpy.data.textures.new(mat_name, "IMAGE")
+                    texture.image = bpy.data.images.load(csv_mesh.daytime_texture_file)
 
                 slot = mat.texture_slots.add()
                 slot.texture = texture
@@ -82,6 +98,8 @@ class ImportCsv:
                 slot.alpha_factor = mat.alpha
                 mat.alpha = 0.0
                 mat.use_transparency = True
+
+            mat.csv_props.nighttime_texture_file = csv_mesh.nighttime_texture_file
 
         # Set the material on the mesh.
         blender_mesh.materials.append(mat)
@@ -116,7 +134,7 @@ class ImportCsv:
                 logger.debug("Face" + str(j) + ": " + str(meshes_list[i].faces_list[j]))
                 pass
 
-        obj_base_name = pathlib.Path(file_path).stem
+        obj_base_name = pathlib.Path(self.file_path).stem
 
         for i in range(len(meshes_list)):
             blender_mesh = bpy.data.meshes.new(str(obj_base_name) + " - " + str(i))
@@ -139,10 +157,6 @@ class ImportCsv:
             obj.csv_props.blend_mode = meshes_list[i].blend_mode
             obj.csv_props.glow_half_distance = meshes_list[i].glow_half_distance
             obj.csv_props.glow_attenuation_mode = meshes_list[i].glow_attenuation_mode
-
-            if meshes_list[i].nighttime_texture_file != "":
-                obj.csv_props.nighttime_texture_file = str(pathlib.Path(self.file_path).joinpath("..", meshes_list[i].nighttime_texture_file).resolve())
-
             obj.csv_props.use_transparent_color = meshes_list[i].use_transparent_color
             obj.csv_props.transparent_color = (meshes_list[i].transparent_color[0] * self.INV255, meshes_list[i].transparent_color[1] * self.INV255, meshes_list[i].transparent_color[2] * self.INV255)
 

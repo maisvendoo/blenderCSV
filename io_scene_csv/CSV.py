@@ -16,6 +16,8 @@
 #    along with blenderCSV.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
+import os
+import pathlib
 from typing import List, Tuple
 from .chardet import chardet
 from . import logger
@@ -308,20 +310,26 @@ class CsvObject:
 
                 try:
                     vx = float(arguments[0])
-                except Exception:
-                    logger.error("Invalid argument vX in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument vX in " + command + " at line " + str(i + 1))
+
                     vx = 0.0
 
                 try:
                     vy = float(arguments[1])
-                except Exception:
-                    logger.error("Invalid argument vY in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument vY in " + command + " at line " + str(i + 1))
+
                     vy = 0.0
 
                 try:
                     vz = float(arguments[2])
-                except Exception:
-                    logger.error("Invalid argument vZ in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument vZ in " + command + " at line " + str(i + 1))
+
                     vz = 0.0
 
                 if len(arguments) >= 4:
@@ -339,8 +347,10 @@ class CsvObject:
                     for j in range(len(arguments)):
                         try:
                             a.append(int(arguments[j]))
-                        except Exception:
-                            logger.error("v" + str(j) + " is invalid in " + command + " at line " + str(i + 1))
+                        except Exception as ex:
+                            if type(ex) is not IndexError:
+                                logger.error("v" + str(j) + " is invalid in " + command + " at line " + str(i + 1))
+
                             q = False
                             break
 
@@ -369,20 +379,26 @@ class CsvObject:
 
                 try:
                     x = float(arguments[0])
-                except Exception:
-                    logger.error("Invalid argument HalfWidth in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument HalfWidth in " + command + " at line " + str(i + 1))
+
                     x = 1.0
 
                 try:
                     y = float(arguments[1])
-                except Exception:
-                    logger.error("Invalid argument HalfHeight in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument HalfHeight in " + command + " at line " + str(i + 1))
+
                     y = 1.0
 
                 try:
                     z = float(arguments[2])
-                except Exception:
-                    logger.error("Invalid argument HalfDepth in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument HalfDepth in " + command + " at line " + str(i + 1))
+
                     z = 1.0
 
                 self.create_cube(mesh, x, y, z)
@@ -393,8 +409,10 @@ class CsvObject:
 
                 try:
                     n = int(arguments[0])
-                except Exception:
-                    logger.error("Invalid argument n in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument n in " + command + " at line " + str(i + 1))
+
                     n = 8
 
                 if n < 2:
@@ -403,20 +421,26 @@ class CsvObject:
 
                 try:
                     r1 = float(arguments[1])
-                except Exception:
-                    logger.error("Invalid argument UpperRadius in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument UpperRadius in " + command + " at line " + str(i + 1))
+
                     r1 = 1.0
 
                 try:
                     r2 = float(arguments[2])
-                except Exception:
-                    logger.error("Invalid argument LowerRadius in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument LowerRadius in " + command + " at line " + str(i + 1))
+
                     r2 = 1.0
 
                 try:
                     h = float(arguments[3])
-                except Exception:
-                    logger.error("Invalid argument Height in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Height in " + command + " at line " + str(i + 1))
+
                     h = 1.0
 
                 self.create_cylinder(mesh, n, r1, r2, h)
@@ -427,20 +451,26 @@ class CsvObject:
 
                 try:
                     x = float(arguments[0])
-                except Exception:
-                    logger.error("Invalid argument X in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument X in " + command + " at line " + str(i + 1))
+
                     x = 0.0
 
                 try:
                     y = float(arguments[1])
-                except Exception:
-                    logger.error("Invalid argument Y in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Y in " + command + " at line " + str(i + 1))
+
                     y = 0.0
 
                 try:
                     z = float(arguments[2])
-                except Exception:
-                    logger.error("Invalid argument Z in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Z in " + command + " at line " + str(i + 1))
+
                     z = 0.0
 
                 self.apply_translation(mesh, x, y, z)
@@ -455,8 +485,10 @@ class CsvObject:
 
                 try:
                     x = float(arguments[0])
-                except Exception:
-                    logger.error("Invalid argument X in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument X in " + command + " at line " + str(i + 1))
+
                     x = 1.0
 
                 if x == 0.0:
@@ -465,8 +497,10 @@ class CsvObject:
 
                 try:
                     y = float(arguments[1])
-                except Exception:
-                    logger.error("Invalid argument Y in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Y in " + command + " at line " + str(i + 1))
+
                     y = 1.0
 
                 if y == 0.0:
@@ -475,8 +509,10 @@ class CsvObject:
 
                 try:
                     z = float(arguments[2])
-                except Exception:
-                    logger.error("Invalid argument Z in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Z in " + command + " at line " + str(i + 1))
+
                     z = 1.0
 
                 if z == 0.0:
@@ -495,26 +531,34 @@ class CsvObject:
 
                 try:
                     rx = float(arguments[0])
-                except Exception:
-                    logger.error("Invalid argument X in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument X in " + command + " at line " + str(i + 1))
+
                     rx = 0.0
 
                 try:
                     ry = float(arguments[1])
-                except Exception:
-                    logger.error("Invalid argument Y in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Y in " + command + " at line " + str(i + 1))
+
                     ry = 0.0
 
                 try:
                     rz = float(arguments[2])
-                except Exception:
-                    logger.error("Invalid argument Z in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Z in " + command + " at line " + str(i + 1))
+
                     rz = 0.0
 
                 try:
                     angle = float(arguments[3])
-                except Exception:
-                    logger.error("Invalid argument Angle in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Angle in " + command + " at line " + str(i + 1))
+
                     angle = 0.0
 
                 t = rx * rx + ry * ry + rz * rz
@@ -543,44 +587,58 @@ class CsvObject:
 
                 try:
                     dx = float(arguments[0])
-                except Exception:
-                    logger.error("Invalid argument dX in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument dX in " + command + " at line " + str(i + 1))
+
                     dx = 0.0
 
                 try:
                     dy = float(arguments[1])
-                except Exception:
-                    logger.error("Invalid argument dY in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument dY in " + command + " at line " + str(i + 1))
+
                     dy = 0.0
 
                 try:
                     dz = float(arguments[2])
-                except Exception:
-                    logger.error("Invalid argument dZ in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument dZ in " + command + " at line " + str(i + 1))
+
                     dz = 0.0
 
                 try:
                     sx = float(arguments[3])
-                except Exception:
-                    logger.error("Invalid argument sX in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument sX in " + command + " at line " + str(i + 1))
+
                     sx = 0.0
 
                 try:
                     sy = float(arguments[4])
-                except Exception:
-                    logger.error("Invalid argument sY in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument sY in " + command + " at line " + str(i + 1))
+
                     sy = 0.0
 
                 try:
                     sz = float(arguments[5])
-                except Exception:
-                    logger.error("Invalid argument sZ in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument sZ in " + command + " at line " + str(i + 1))
+
                     sz = 0.0
 
                 try:
                     r = float(arguments[6])
-                except Exception:
-                    logger.error("Invalid argument Ratio in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Ratio in " + command + " at line " + str(i + 1))
+
                     r = 0.0
 
                 d = self.normalize((dx, dy, dz))
@@ -597,20 +655,26 @@ class CsvObject:
 
                 try:
                     vx = float(arguments[0])
-                except Exception:
-                    logger.error("Invalid argument vX in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument vX in " + command + " at line " + str(i + 1))
+
                     vx = 0.0
 
                 try:
                     vy = float(arguments[1])
-                except Exception:
-                    logger.error("Invalid argument vY in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument vY in " + command + " at line " + str(i + 1))
+
                     vy = 0.0
 
                 try:
                     vz = float(arguments[2])
-                except Exception:
-                    logger.error("Invalid argument vZ in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument vZ in " + command + " at line " + str(i + 1))
+
                     vz = 0.0
 
                 if len(arguments) >= 4:
@@ -628,8 +692,10 @@ class CsvObject:
 
                 try:
                     red = int(arguments[0])
-                except Exception:
-                    logger.error("Invalid argument Red in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Red in " + command + " at line " + str(i + 1))
+
                     red = 0
 
                 if red < 0 or red > 255:
@@ -638,8 +704,10 @@ class CsvObject:
 
                 try:
                     green = int(arguments[1])
-                except Exception:
-                    logger.error("Invalid argument Green in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Green in " + command + " at line " + str(i + 1))
+
                     green = 0
 
                 if green < 0 or green > 255:
@@ -648,8 +716,10 @@ class CsvObject:
 
                 try:
                     blue = int(arguments[2])
-                except Exception:
-                    logger.error("Invalid argument Blue in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Blue in " + command + " at line " + str(i + 1))
+
                     blue = 0
 
                 if blue < 0 or blue > 255:
@@ -658,8 +728,10 @@ class CsvObject:
 
                 try:
                     alpha = int(arguments[3])
-                except Exception:
-                    logger.error("Invalid argument Alpha in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Alpha in " + command + " at line " + str(i + 1))
+
                     alpha = 0
 
                 if alpha < 0 or alpha > 255:
@@ -674,8 +746,10 @@ class CsvObject:
 
                 try:
                     red = int(arguments[0])
-                except Exception:
-                    logger.error("Invalid argument Red in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Red in " + command + " at line " + str(i + 1))
+
                     red = 0
 
                 if red < 0 or red > 255:
@@ -684,8 +758,10 @@ class CsvObject:
 
                 try:
                     green = int(arguments[1])
-                except Exception:
-                    logger.error("Invalid argument Green in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Green in " + command + " at line " + str(i + 1))
+
                     green = 0
 
                 if green < 0 or green > 255:
@@ -694,8 +770,10 @@ class CsvObject:
 
                 try:
                     blue = int(arguments[2])
-                except Exception:
-                    logger.error("Invalid argument Blue in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Blue in " + command + " at line " + str(i + 1))
+
                     blue = 0
 
                 if blue < 0 or blue > 255:
@@ -711,8 +789,10 @@ class CsvObject:
 
                 try:
                     red = int(arguments[0])
-                except Exception:
-                    logger.error("Invalid argument Red in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Red in " + command + " at line " + str(i + 1))
+
                     red = 0
 
                 if red < 0 or red > 255:
@@ -721,8 +801,10 @@ class CsvObject:
 
                 try:
                     green = int(arguments[1])
-                except Exception:
-                    logger.error("Invalid argument Green in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Green in " + command + " at line " + str(i + 1))
+
                     green = 0
 
                 if green < 0 or green > 255:
@@ -731,8 +813,10 @@ class CsvObject:
 
                 try:
                     blue = int(arguments[2])
-                except Exception:
-                    logger.error("Invalid argument Blue in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Blue in " + command + " at line " + str(i + 1))
+
                     blue = 0
 
                 if blue < 0 or blue > 255:
@@ -779,14 +863,20 @@ class CsvObject:
                     logger.warning("At most 2 arguments are expected in " + command + " at line " + str(i + 1))
 
                 try:
-                    mesh.daytime_texture_file = arguments[0]
-                except Exception:
-                    logger.error("Invalid argument DaytimeTexture in " + command + " at line " + str(i + 1))
+                    mesh.daytime_texture_file = str(pathlib.Path(file_path).joinpath("..", arguments[0]).resolve())
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument DaytimeTexture in " + command + " at line " + str(i + 1))
+
+                    mesh.daytime_texture_file = ""
 
                 try:
-                    mesh.nighttime_texture_file = arguments[1]
-                except Exception:
-                    logger.error("Invalid argument NighttimeTexture in " + command + " at line " + str(i + 1))
+                    mesh.nighttime_texture_file = str(pathlib.Path(file_path).joinpath("..", arguments[1]).resolve())
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument NighttimeTexture in " + command + " at line " + str(i + 1))
+
+                    mesh.nighttime_texture_file = ""
 
             elif command.lower() == "SetTextureCoordinates".lower():
                 if len(arguments) > 3:
@@ -794,20 +884,26 @@ class CsvObject:
 
                 try:
                     j = int(arguments[0])
-                except Exception:
-                    logger.error("Invalid argument VertexIndex in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument VertexIndex in " + command + " at line " + str(i + 1))
+
                     j = 0
 
                 try:
                     x = float(arguments[1])
-                except Exception:
-                    logger.error("Invalid argument X in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument X in " + command + " at line " + str(i + 1))
+
                     x = 0.0
 
                 try:
                     y = float(arguments[2])
-                except Exception:
-                    logger.error("Invalid argument Y in " + command + " at line " + str(i + 1))
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Y in " + command + " at line " + str(i + 1))
+
                     y = 0.0
 
                 if j >= 0 and j < len(mesh.vertex_list):
@@ -880,10 +976,14 @@ class CsvObject:
             csv_text.append("SetBlendMode, " + mesh.blend_mode + ", " + str(mesh.glow_half_distance) + ", " + mesh.glow_attenuation_mode + "\n")
 
             # Texture
-            if mesh.nighttime_texture_file != "":
-                csv_text.append("LoadTexture, " + mesh.daytime_texture_file + ", " + mesh.nighttime_texture_file + "\n")
+            model_dir = pathlib.Path(file_path).parent
+
+            if mesh.daytime_texture_file != "" and mesh.nighttime_texture_file != "":
+                csv_text.append("LoadTexture, " + os.path.relpath(str(mesh.daytime_texture_file), str(model_dir)) + ", " + os.path.relpath(str(mesh.nighttime_texture_file), str(model_dir)) + "\n")
             elif mesh.daytime_texture_file != "":
-                csv_text.append("LoadTexture, " + mesh.daytime_texture_file + "\n")
+                csv_text.append("LoadTexture, " + os.path.relpath(str(mesh.daytime_texture_file), str(model_dir)) + "\n")
+            elif mesh.nighttime_texture_file != "":
+                csv_text.append("LoadTexture, , " + os.path.relpath(str(mesh.nighttime_texture_file), str(model_dir)) + "\n")
 
             # Transparent color
             if mesh.use_transparent_color:
