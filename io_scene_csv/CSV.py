@@ -34,7 +34,8 @@ class CsvMesh:
         self.blend_mode = "Normal"
         self.glow_half_distance = 0
         self.glow_attenuation_mode = "DivideExponent4"
-        self.texture_file = ""
+        self.daytime_texture_file = ""
+        self.nighttime_texture_file = ""
         self.use_transparent_color = False
         self.transparent_color = (0, 0, 0)  # type: Tuple[int, int, int]
         self.texcoords_list = []  # type: List[Tuple[int, float, float]]
@@ -778,12 +779,14 @@ class CsvObject:
                     logger.warning("At most 2 arguments are expected in " + command + " at line " + str(i + 1))
 
                 try:
-                    mesh.texture_file = arguments[0]
+                    mesh.daytime_texture_file = arguments[0]
                 except Exception:
                     logger.error("Invalid argument DaytimeTexture in " + command + " at line " + str(i + 1))
 
-                if len(arguments) >= 2:
-                    logger.info("This add-on ignores NighttimeTexture in " + command + " at line " + str(i + 1))
+                try:
+                    mesh.nighttime_texture_file = arguments[1]
+                except Exception:
+                    logger.error("Invalid argument NighttimeTexture in " + command + " at line " + str(i + 1))
 
             elif command.lower() == "SetTextureCoordinates".lower():
                 if len(arguments) > 3:
@@ -867,7 +870,7 @@ class CsvObject:
                     csv_text.append("AddFace" + face_text + "\n")
 
             # Diffuse color
-            csv_text.append("SetColor, " + str(mesh.diffuse_color[0]) + ", " + str(mesh.diffuse_color[1]) + ", " + str(mesh.diffuse_color[2]) + "\n")
+            csv_text.append("SetColor, " + str(mesh.diffuse_color[0]) + ", " + str(mesh.diffuse_color[1]) + ", " + str(mesh.diffuse_color[2]) + ", " + str(mesh.diffuse_color[3]) + "\n")
 
             # Emissive color
             if mesh.use_emissive_color:
@@ -877,8 +880,10 @@ class CsvObject:
             csv_text.append("SetBlendMode, " + mesh.blend_mode + ", " + str(mesh.glow_half_distance) + ", " + mesh.glow_attenuation_mode + "\n")
 
             # Texture
-            if mesh.texture_file != "":
-                csv_text.append("LoadTexture, " + mesh.texture_file + "\n")
+            if mesh.nighttime_texture_file != "":
+                csv_text.append("LoadTexture, " + mesh.daytime_texture_file + ", " + mesh.nighttime_texture_file + "\n")
+            elif mesh.daytime_texture_file != "":
+                csv_text.append("LoadTexture, " + mesh.daytime_texture_file + "\n")
 
             # Transparent color
             if mesh.use_transparent_color:

@@ -209,6 +209,13 @@ class CsvMeshProperties(bpy.types.PropertyGroup):
         default="DivideExponent4"
     )
 
+    nighttime_texture_file = bpy.props.StringProperty(
+        name="NighttimeTexture",
+        description="Set NighttimeTexture command's LoadTexture",
+        default="",
+        subtype="FILE_PATH"
+    )
+
     use_transparent_color = bpy.props.BoolProperty(
         name="Use SetDecalTransparentColor",
         description="Use SetDecalTransparentColor command",
@@ -246,6 +253,9 @@ class CsvMeshPanel(bpy.types.Panel):
         self.layout.prop(context.object.csv_props, "blend_mode")
         self.layout.prop(context.object.csv_props, "glow_half_distance")
         self.layout.prop(context.object.csv_props, "glow_attenuation_mode")
+        self.layout.separator()
+        self.layout.label("LoadTexture:")
+        self.layout.prop(context.object.csv_props, "nighttime_texture_file")
         self.layout.separator()
         self.layout.label("SetDecalTransparentColor:")
         self.layout.prop(context.object.csv_props, "use_transparent_color")

@@ -47,8 +47,8 @@ class ImportCsv:
 
     def create_material(self, csv_mesh: CSV.CsvMesh, blender_mesh: bpy.types.Mesh) -> None:
         # Decide the name of the material. If a texture file exists, use that file name.
-        if csv_mesh.texture_file != "":
-            mat_name = pathlib.Path(csv_mesh.texture_file).stem
+        if csv_mesh.daytime_texture_file != "":
+            mat_name = pathlib.Path(csv_mesh.daytime_texture_file).stem
         else:
             mat_name = blender_mesh.name
 
@@ -65,8 +65,8 @@ class ImportCsv:
             mat.use_transparency = csv_mesh.diffuse_color[3] != 255
 
             # Set the texture on the material.
-            if csv_mesh.texture_file != "":
-                texture_path = pathlib.Path(self.file_path).joinpath("..", csv_mesh.texture_file).resolve()
+            if csv_mesh.daytime_texture_file != "":
+                texture_path = pathlib.Path(self.file_path).joinpath("..", csv_mesh.daytime_texture_file).resolve()
                 texture = bpy.data.textures.get(texture_path.stem)
 
                 if texture is None:
@@ -139,6 +139,10 @@ class ImportCsv:
             obj.csv_props.blend_mode = meshes_list[i].blend_mode
             obj.csv_props.glow_half_distance = meshes_list[i].glow_half_distance
             obj.csv_props.glow_attenuation_mode = meshes_list[i].glow_attenuation_mode
+
+            if meshes_list[i].nighttime_texture_file != "":
+                obj.csv_props.nighttime_texture_file = str(pathlib.Path(self.file_path).joinpath("..", meshes_list[i].nighttime_texture_file).resolve())
+
             obj.csv_props.use_transparent_color = meshes_list[i].use_transparent_color
             obj.csv_props.transparent_color = (meshes_list[i].transparent_color[0] * self.INV255, meshes_list[i].transparent_color[1] * self.INV255, meshes_list[i].transparent_color[2] * self.INV255)
 
