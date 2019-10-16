@@ -21,7 +21,7 @@ import filecmp
 import pathlib
 import os
 import shutil
-from typing import List, Dict
+from typing import List, Tuple, Dict
 from . import CSV
 from . import logger
 from . import Transform
@@ -87,23 +87,23 @@ class ExportCsv:
                 mesh.name = "Mesh: " + obj.data.name
 
                 # Add vertices to mesh
-                blender_vertices = []  # type: List[bmesh.types.BMVert]
+                blender_vertices = []  # type: List[Tuple[bmesh.types.BMFace, bmesh.types.BMVert]]
 
                 for face in faces:
                     for vertex in face.verts:
-                        if vertex not in blender_vertices:
-                            blender_vertices.append(vertex)
+                        if (face, vertex) not in blender_vertices:
+                            blender_vertices.append((face, vertex))
 
                 for vertex in blender_vertices:
-                    mesh.vertex_list.append((vertex.co[0], vertex.co[1], vertex.co[2]))
-                    mesh.normals_list.append((vertex.normal[0], vertex.normal[1], vertex.normal[2]))
+                    mesh.vertex_list.append((vertex[1].co[0], vertex[1].co[1], vertex[1].co[2]))
+                    mesh.normals_list.append((vertex[1].normal[0], vertex[1].normal[1], vertex[1].normal[2]))
 
                 # Add faces to mesh
                 for face in faces:
                     indices = []  # type: List[int]
 
                     for vertex in face.verts:
-                        indices.append(blender_vertices.index(vertex))
+                        indices.append(blender_vertices.index((face, vertex)))
 
                     mesh.faces_list.append(tuple(indices))
 
@@ -111,7 +111,7 @@ class ExportCsv:
                 if blender_mesh.loops.layers.uv.active is not None:
                     for face in faces:
                         for loop in face.loops:
-                            vertex_index = blender_vertices.index(loop.vert)
+                            vertex_index = blender_vertices.index((face, loop.vert))
                             uv = loop[blender_mesh.loops.layers.uv.active].uv
                             texcoords = (vertex_index, uv[0], 1.0 - uv[1])
 
