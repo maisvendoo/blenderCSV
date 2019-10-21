@@ -70,5 +70,5 @@ This plugin is licensed under *GPL-2.0*.
 
 ###  Third-Party Libraries
 
-- This plugin uses **Chardet** to determine the character encoding. This plugin uses Chardet to determine the character encoding. This is licensed under the *LGPL-2.1* as per `io_scene_csv/chardet/ LICENSE`.
+- This plugin uses **Chardet** to determine the character encoding. This plugin uses Chardet to determine the character encoding. This is licensed under the *LGPL-2.1* as per `io_scene_csv/chardet/LICENSE`.
 
