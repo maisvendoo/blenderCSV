@@ -142,6 +142,8 @@ class ExportCsv:
 
                             mesh.diffuse_color = (mesh.diffuse_color[0], mesh.diffuse_color[1], mesh.diffuse_color[2], round(texture_slot.alpha_factor * 255))
 
+                    mesh.use_add_face2 = mat.csv_props.use_add_face2
+
                     if mat.csv_props.nighttime_texture_file != "":
                         texture_path = pathlib.Path(bpy.path.abspath(mat.csv_props.nighttime_texture_file)).resolve()
 
@@ -153,7 +155,6 @@ class ExportCsv:
                     mesh.name += ", Material: Undefined"
 
                 # Set options to mesh
-                mesh.use_add_face2 = obj.csv_props.use_add_face2
                 mesh.use_emissive_color = obj.csv_props.use_emissive_color
                 mesh.emissive_color = (round(obj.csv_props.emissive_color[0] * 255), round(obj.csv_props.emissive_color[1] * 255), round(obj.csv_props.emissive_color[2] * 255))
                 mesh.blend_mode = obj.csv_props.blend_mode

@@ -166,12 +166,6 @@ class CsvExporter(bpy.types.Operator):
 
 
 class CsvMeshProperties(bpy.types.PropertyGroup):
-    use_add_face2 = bpy.props.BoolProperty(
-        name="Use AddFace2",
-        description="Use AddFace2 command for generate faces in OpenBVE",
-        default=False
-    )
-
     use_emissive_color = bpy.props.BoolProperty(
         name="Use SetEmissiveColor",
         description="Use SetEmissiveColor command",
@@ -226,6 +220,12 @@ class CsvMeshProperties(bpy.types.PropertyGroup):
 
 
 class CsvMaterialProperties(bpy.types.PropertyGroup):
+    use_add_face2 = bpy.props.BoolProperty(
+        name="Use AddFace2",
+        description="Use AddFace2 command for generate faces in OpenBVE",
+        default=False
+    )
+
     nighttime_texture_file = bpy.props.StringProperty(
         name="NighttimeTexture",
         description="Set NighttimeTexture command's LoadTexture",
@@ -245,8 +245,6 @@ class CsvMeshPanel(bpy.types.Panel):
         return context.object and context.object.type == "MESH"
 
     def draw(self, context):
-        self.layout.prop(context.object.csv_props, "use_add_face2")
-        self.layout.separator()
         self.layout.label("SetEmissiveColor:")
         self.layout.prop(context.object.csv_props, "use_emissive_color")
         self.layout.prop(context.object.csv_props, "emissive_color")
@@ -272,6 +270,8 @@ class CsvMaterialPanel(bpy.types.Panel):
         return context.material
 
     def draw(self, context):
+        self.layout.prop(context.material.csv_props, "use_add_face2")
+        self.layout.separator()
         self.layout.label("LoadTexture:")
         self.layout.prop(context.material.csv_props, "nighttime_texture_file")
 

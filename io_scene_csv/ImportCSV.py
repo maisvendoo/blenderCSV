@@ -57,6 +57,9 @@ class ImportCsv:
             if slot.alpha_factor != csv_mesh.diffuse_color[3] * self.INV255:
                 return None
 
+        if mat.csv_props.use_add_face2 != csv_mesh.use_add_face2:
+            return None
+
         if mat.csv_props.nighttime_texture_file != csv_mesh.nighttime_texture_file:
             return None
 
@@ -99,6 +102,7 @@ class ImportCsv:
                 mat.alpha = 0.0
                 mat.use_transparency = True
 
+            mat.csv_props.use_add_face2 = csv_mesh.use_add_face2
             mat.csv_props.nighttime_texture_file = csv_mesh.nighttime_texture_file
 
         # Set the material on the mesh.
@@ -152,7 +156,6 @@ class ImportCsv:
             obj = bpy.data.objects.new(blender_mesh.name, blender_mesh)
             obj.select = True
 
-            obj.csv_props.use_add_face2 = meshes_list[i].use_add_face2
             obj.csv_props.use_emissive_color = meshes_list[i].use_emissive_color
             obj.csv_props.emissive_color = (meshes_list[i].emissive_color[0] * self.INV255, meshes_list[i].emissive_color[1] * self.INV255, meshes_list[i].emissive_color[2] * self.INV255)
             obj.csv_props.blend_mode = meshes_list[i].blend_mode
