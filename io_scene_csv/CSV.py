@@ -84,12 +84,12 @@ class CsvObject:
         mesh.vertex_list.append((-sx, -sy, sz))
         mesh.vertex_list.append((-sx, sy, sz))
 
-        mesh.faces_list.append(tuple(reversed((v + 0, v + 1, v + 2, v + 3))))
-        mesh.faces_list.append(tuple(reversed((v + 0, v + 4, v + 5, v + 1))))
-        mesh.faces_list.append(tuple(reversed((v + 0, v + 3, v + 7, v + 4))))
-        mesh.faces_list.append(tuple(reversed((v + 6, v + 5, v + 4, v + 7))))
-        mesh.faces_list.append(tuple(reversed((v + 6, v + 7, v + 3, v + 2))))
-        mesh.faces_list.append(tuple(reversed((v + 6, v + 2, v + 1, v + 5))))
+        mesh.faces_list.append((v + 0, v + 1, v + 2, v + 3))
+        mesh.faces_list.append((v + 0, v + 4, v + 5, v + 1))
+        mesh.faces_list.append((v + 0, v + 3, v + 7, v + 4))
+        mesh.faces_list.append((v + 6, v + 5, v + 4, v + 7))
+        mesh.faces_list.append((v + 6, v + 7, v + 3, v + 2))
+        mesh.faces_list.append((v + 6, v + 2, v + 1, v + 5))
 
     def create_cylinder(self, mesh: CsvMesh, n: int, r1: float, r2: float, h: float) -> None:
         # Parameters
@@ -123,7 +123,7 @@ class CsvObject:
             i1 = (2 * i + 3) % (2 * n)
             i2 = 2 * i + 1
             i3 = 2 * i
-            mesh.faces_list.append(tuple(reversed((v + i0, v + i1, v + i2, v + i3))))
+            mesh.faces_list.append((v + i0, v + i1, v + i2, v + i3))
 
         for i in range(m):
             face = []
@@ -136,7 +136,7 @@ class CsvObject:
                     # upper cap
                     face.append(v + 2 * (n - j - 1))
 
-            mesh.faces_list.append(tuple(reversed(face)))
+            mesh.faces_list.append(tuple(face))
 
     def apply_translation(self, mesh: CsvMesh, x: float, y: float, z: float) -> None:
         for i in range(len(mesh.vertex_list)):
@@ -365,11 +365,11 @@ class CsvObject:
                             break
 
                     if q:
-                        mesh.faces_list.append(tuple(reversed(a)))
+                        mesh.faces_list.append(tuple(a))
 
                         if command.lower() == "AddFace2".lower():
                             if option.use_split_add_face2:
-                                mesh.faces_list.append(tuple(a))
+                                mesh.faces_list.append(tuple(reversed(a)))
                             else:
                                 mesh.use_add_face2 = True
 
@@ -957,7 +957,7 @@ class CsvObject:
             for face in mesh.faces_list:
                 face_text = ""
 
-                for vertex_index in reversed(face):
+                for vertex_index in face:
                     face_text += ", " + str(vertex_index)
 
                 if mesh.use_add_face2:

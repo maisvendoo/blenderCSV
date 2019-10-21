@@ -37,7 +37,14 @@ def swap_coordinate_system(matrix_world: mathutils.Matrix, mesh: Union[bpy.types
             vertex.co = swap_mat * matrix_world * vertex.co
             vertex.normal = (swap_mat * matrix_world).to_3x3().normalized() * vertex.normal
 
+        if is_swap:
+            mesh.flip_normals()
+
     if type(mesh) is bmesh.types.BMesh:
         for vertex in mesh.verts:
             vertex.co = swap_mat * matrix_world * vertex.co
             vertex.normal = (swap_mat * matrix_world).to_3x3().normalized() * vertex.normal
+
+        if is_swap:
+            for face in mesh.faces:
+                face.normal_flip()
