@@ -69,8 +69,7 @@ class ExportCsv:
             blender_mesh = bmesh.new()
             blender_mesh.from_mesh(obj.data)
 
-            if self.option.use_transform_coords:
-                Transform.swap_coordinate_system(obj.matrix_world, blender_mesh)
+            Transform.swap_coordinate_system(obj.matrix_world, blender_mesh, self.option.use_transform_coords)
 
             # Group faces by material index.
             blender_faces = {}  # type: Dict[int, List[bmesh.types.BMFace]]

@@ -145,8 +145,9 @@ class ImportCsv:
 
             self.set_texcoords(meshes_list[i], blender_mesh)
 
-            if self.option.use_transform_coords:
-                Transform.swap_coordinate_system(mathutils.Matrix.Identity(4), blender_mesh)
+            Transform.swap_coordinate_system(mathutils.Matrix.Identity(4), blender_mesh, self.option.use_transform_coords)
+
+            blender_mesh.calc_normals()
 
             obj = bpy.data.objects.new(blender_mesh.name, blender_mesh)
             obj.select = True
