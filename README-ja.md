@@ -1,6 +1,6 @@
 [English](README.md)
 
-# Blender plugin for Import|Export OpenBVE *.csv objects
+# Blender plugin for Import|Export OpenBVE \*.csv objects
 
 本プラグインはBlender2.79に対応しております。**現在のバージョンは2.80への対応しておりません。**
 
@@ -16,9 +16,9 @@
 ![user-Preferences3-jp](images/user-Preferences3-jp.jpg)
 6. "ユーザー設定の保存"を押し、変更を有効にした上でBlenderを再起動します。
 ## 2. プラグインを使う
-### 2.1 *.csvをBlenderにインポートする
+### 2.1 \*.csvをBlenderにインポートする
 
-1. ファイル -> インポート -> OpenBVE CSV model (*.csv)と選択します。
+1. ファイル -> インポート -> OpenBVE CSV model (\*.csv)と選択します。
    ![import1-jp](images/import1-jp.jpg)
 
 2. インポートオプションを選択します。
@@ -29,17 +29,17 @@
    - *Transform coordinates*: OpenBVEの左手座標系からBlenderの右手座標系へ変換するか選択します。デフォルトでは有効です。
    - *Split AddFace2:* AddFace2で生成される面を別々の面に分割して取り込みます。その際、AddFace2フラグは解除されます。
 
-3. ファイルシステムからモデルを選択後、"OpenBVE model (*.csv)"ボタンを押し、現在のワークスペースにインポートします。
+3. ファイルシステムからモデルを選択後、"OpenBVE model (\*.csv)"ボタンを押し、現在のワークスペースにインポートします。
    ![import3-jp](images/import3-jp.jpg)
 
    インポートオプションの*Transform coordinates*を無効にすると下図のようになります。
    ![import4-jp](images/import4-jp.jpg)
 
-### 2.2 Blenderから*.csvへエクスポートする
+### 2.2 Blenderから\*.csvへエクスポートする
 
 1. Blenderでエクスポートしたいモデルを**オブジェクトモードにしてから**選択します。
    ![export1-jp](images/export1-jp.jpg)
-2. ファイル -> エクスポート -> OpenBVE CSV model (*.csv)と選択します。
+2. ファイル -> エクスポート -> OpenBVE CSV model (\*.csv)と選択します。
 3. エクスポートオプションを選択します
 
    ![export2](images/export2.jpg)
@@ -50,7 +50,7 @@
    - *Output Normals*: 法線を出力するか選択します。デフォルトでは有効です。
    - *Copy textures in separated folder*: 全てのテクスチャファイルを新たなフォルダを作成し、コピーします。csvファイルと同じフォルダ階層に作られ、フォルダ名はモデル名-texturesになります。デフォルトでは有効です。
 
-4. ファイルシステムからモデルの出力先を選択後、"OpenBVE model (*.csv)"ボタンを押し、エクスポートします。
+4. ファイルシステムからモデルの出力先を選択後、"OpenBVE model (\*.csv)"ボタンを押し、エクスポートします。
 
 5. 結果をOpenBVEのObjectViewerで確認します。
     ![export3](images/export3.jpg)
@@ -70,8 +70,8 @@ Additional properties for CSV meshにおいて、OpenBVE特有の属性を付与
 
 ![material-setting-jp](images/material-setting-jp.jpg)
 
-- *Addface2*: マテリアルをエクスポート時にAddFace2で両面化させる際に有効/無効が指定できます。
-- *Loadtexture*: LoadTextureのNighttimeTextureを指定できます。
+- *Use AddFace2*: マテリアルをエクスポート時にAddFace2で両面化させる際に有効/無効が指定できます。
+- *LoadTexture*: LoadTextureのNighttimeTextureを指定できます。
 
 ## 4. デバッグ
 

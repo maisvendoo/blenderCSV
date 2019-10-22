@@ -1,6 +1,6 @@
 [Japanese](README.md)
 
-# Blender plugin for Import|Export OpenBVE *.csv objects
+# Blender plugin for Import|Export OpenBVE \*.csv objects
 
 This plugin is corresponds for Blender2.79. **The current version is not corresponds for 2.80.**
 
@@ -16,9 +16,9 @@ This plugin is corresponds for Blender2.79. **The current version is not corresp
 ![user-Preferences3-en](images/user-Preferences3-en.jpg)
 6. To enabled the setting, press "Save User Settings",  and restart Blender.
 ## 2. Using plugin
-### 2.1 Import *.csv model file to Blender
+### 2.1 Import \*.csv model file to Blender
 
-1. Choose File -> Import -> OpenBVE CSV model (*.csv) from main menu.
+1. Choose File -> Import -> OpenBVE CSV model (\*.csv) from main menu.
    ![import1-en](images/import1-en.jpg)
 
 2. Select import options.
@@ -27,19 +27,19 @@ This plugin is corresponds for Blender2.79. **The current version is not corresp
 
    - *Set logging Level*:  select threshold level for the log file. The default setting is "INFO".
    - *Transform coordinates*: If you want to change OpenBVE 's Left-handed coordinate system to Blender's Right-handed coordinate system, check this option. The default is enable.
-   - *Split AddFace2:* If this option is enabled, AddFace2's double-sided is split to an each face. After splited, each faces Material's AddFace2 option is turn off automatically.
+   - *Split AddFace2:* If this option is enabled, AddFace2's double-sided is split to an each face. After split, each faces Material's AddFace2 option is turn off automatically.
 
-3. After choose the *.csv model from filesystem, press the "OpenBVE model (*.csv)" button, then import the model.
+3. After choose the \*.csv model from filesystem, press the "OpenBVE model (\*.csv)" button, then import the model.
    ![import3-en](images/import3-en.jpg)
 
-   If you are turn off the*Transform coordinates*option, the imported model is as shown below.
+   If you are turn off the *Transform coordinates* option, the imported model is as shown below.
    ![import4-en](images/import4-en.jpg)
 
-### 2.2 Exporting from Blender to *.csv model file
+### 2.2 Exporting from Blender to \*.csv model file
 
 1. Before the choose export object, **you must change mode to "Object Mode"**. After changed, you can choose export object(s).
    ![export1-en](images/export1-en.jpg)
-2. Choose File->Export->OpenBVE CSV model (*.csv) from main menu.
+2. Choose File -> Export -> OpenBVE CSV model (\*.csv) from main menu.
 3. Choose export options.
 
    ![export2](images/export2.jpg)
@@ -70,8 +70,8 @@ At the Additional properties for CSV mesh, you can be assigns the specific attri
 
 ![material-setting-en](images/material-setting-en.jpg)
 
-- *Addface2*:  If this option is enabled, when you are the exporting, you can enable the material to the double-sided by Addface2.
-- *Loadtexture*: If this file is selected, you can set the NighttimeTexture for LoadTexture.
+- *Use AddFace2*:  If this option is enabled, when you are the exporting, you can enable the material to the double-sided by Addface2.
+- *LoadTexture*: If this file is selected, you can set the NighttimeTexture for LoadTexture.
 
 ## 4. Debugging
 
