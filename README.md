@@ -6,15 +6,15 @@ This plugin is corresponds for Blender2.79. **The current version is not corresp
 
 ## 1. Installation guide
 
-- Please download from [Releases section](https://github.com/maisvendoo/blenderCSV/releases) the newest release.
-- Open Blender, and choose File -> User Preferences... -> Add-ons from main menu.
-- Choose "Install Add-on from File...".
+1. Please download from [Releases section](https://github.com/maisvendoo/blenderCSV/releases) the newest release.
+2. Open Blender, and choose File -> User Preferences... -> Add-ons from main menu.
+3. Choose "Install Add-on from File...".
 ![user-Preferences1-en](images/user-Preferences1-en.jpg)
-- Choose plugins zip file.
+4. Choose plugins zip file.
 ![user-Preferences2-en](images/user-Preferences2-en.jpg)
-- To enable the plugin, turn on the checkbox.
+5. To enable the plugin, turn on the checkbox.
 ![user-Preferences3-en](images/user-Preferences3-en.jpg)
-- To enabled the setting, press "Save User Settings",  and restart Blender.
+6. To enabled the setting, press "Save User Settings",  and restart Blender.
 ## 2. Using plugin
 ### 2.1 Import *.csv model file to Blender
 
@@ -41,7 +41,9 @@ This plugin is corresponds for Blender2.79. **The current version is not corresp
    ![export1-en](images/export1-en.jpg)
 2. Choose File->Export->OpenBVE CSV model (*.csv) from main menu.
 3. Choose export options.
+
    ![export2](images/export2.jpg)
+
    - *Set logging Level*: select threshold level for the log file. The default setting is "INFO".
    - *Transform coordinates*: If you want to change Blender's Right-handed coordinate system to OpenBVE 's Left-handed coordinate system, check this option. The default is enable.
    - *Set global scale*: Set the scale factor. The default value is 1.0.
