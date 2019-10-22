@@ -6,15 +6,15 @@
 
 ## 1. インストールガイド
 
-- 最新のリリースを [Releases section](https://github.com/maisvendoo/blenderCSV/releases) からダウンロードして下さい。
-- Blenderを開き、メインメニューのファイル -> ユーザー設定 -> アドオンを選択します。
-- "ファイルからアドオンをインストール"を選択します。
+1. 最新のリリースを [Releases section](https://github.com/maisvendoo/blenderCSV/releases) からダウンロードして下さい。
+2. Blenderを開き、メインメニューのファイル -> ユーザー設定 -> アドオンを選択します。
+3. "ファイルからアドオンをインストール"を選択します。
 ![user-Preferences1-jp](images/user-Preferences1-jp.jpg)
-- プラグインのzipファイルを選択します。
+4. プラグインのzipファイルを選択します。
 ![user-Preferences2-jp](images/user-Preferences2-jp.jpg)
-- 有効化するために、チェックボックスをONにします。
+5. 有効化するために、チェックボックスをONにします。
 ![user-Preferences3-jp](images/user-Preferences3-jp.jpg)
-- "ユーザー設定の保存"を押し、変更を有効にした上でBlenderを再起動します。
+6. "ユーザー設定の保存"を押し、変更を有効にした上でBlenderを再起動します。
 ## 2. プラグインを使う
 ### 2.1 *.csvをBlenderにインポートする
 
@@ -41,7 +41,9 @@
    ![export1-jp](images/export1-jp.jpg)
 2. ファイル -> エクスポート -> OpenBVE CSV model (*.csv)と選択します。
 3. エクスポートオプションを選択します
+
    ![export2](images/export2.jpg)
+
    - *Set logging Level*: ログへ出力する情報の閾値を選択します。デフォルトでは"INFO"です。
    - *Transform coordinates*: Blenderの右手座標系からOpenBVEの左手座標系へ変換するか選択します。デフォルトでは有効です。
    - *Set global scale*: 大きさの倍率を変更します。デフォルトでは1.0です。
