@@ -1,4 +1,4 @@
-[Japanese](README.md)
+[Japanese](README-ja.md)
 
 # Blender plugin for Import|Export OpenBVE \*.csv objects
 
