@@ -2,7 +2,7 @@
 
 # Blender plugin for Import|Export OpenBVE \*.csv objects
 
-This plugin is corresponds for Blender2.79. **The current version is not corresponds for 2.80.**
+This plugin only works on Blender 2.79. **Please note that it will NOT work on 2.80.**
 
 ## 1. Installation guide
 
