@@ -1,680 +1,1001 @@
-#-------------------------------------------------------------------------------
+#    Copyright 2018, 2019 Dmirty Pritykin, 2019 S520
 #
-#       CSV model loader
-#       RGUPS, Virtual Railway 11/07/2018
-#       Developer: Dmirty Pritykin
+#    This file is part of blenderCSV.
 #
-#-------------------------------------------------------------------------------
+#    blenderCSV is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    blenderCSV is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with blenderCSV.  If not, see <http://www.gnu.org/licenses/>.
+
 import math
+import os
+import pathlib
+from typing import List, Tuple
+from .chardet import chardet
+from . import logger
 
-#-------------------------------------------------------------------------------
-#
-#-------------------------------------------------------------------------------
-class CSVmesh:
 
-    def __init__(self):
+class CsvMesh:
+    def __init__(self) -> None:
         self.name = ""
-        self.vertex_list = []
-        self.normals_list = []
-        self.vertex_indices = []
-        self.faces_list = []
-        self.texcoords_list = []
-        self.texture_file = ""
-        self.diffuse_color = []
-        self.decale_color = []
-        self.is_decale = False
-        self.is_addFace2 = False
-        self.ty_max = 1
+        self.vertex_list = []   # type: List[Tuple[float, float, float]]
+        self.normals_list = []   # type: List[Tuple[float, float, float]]
+        self.use_add_face2 = False
+        self.faces_list = []  # type: List[Tuple[int, ...]]
+        self.diffuse_color = (255, 255, 255, 255)  # type: Tuple[int, int, int, int]
+        self.use_emissive_color = False
+        self.emissive_color = (0, 0, 0)  # type: Tuple[int, int, int]
+        self.blend_mode = "Normal"
+        self.glow_half_distance = 0
+        self.glow_attenuation_mode = "DivideExponent4"
+        self.daytime_texture_file = ""
+        self.nighttime_texture_file = ""
+        self.use_transparent_color = False
+        self.transparent_color = (0, 0, 0)  # type: Tuple[int, int, int]
+        self.texcoords_list = []  # type: List[Tuple[int, float, float]]
 
-#-------------------------------------------------------------------------------
-#
-#-------------------------------------------------------------------------------
-class CSVLoader:
 
-    meshes_list = []
-
+class ImportOption:
     def __init__(self):
-        self.meshes_list.clear()
+        self.use_transform_coords = True
+        self.use_split_add_face2 = False
 
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def parseLine(self, line):
-        tmp = line.rstrip('\n').rstrip('\r').split(",")
 
-        for i, token in enumerate(tmp):
-            str = token.strip(' ')
-            tmp[i] = str
+class ExportOption:
+    def __init__(self):
+        self.use_transform_coords = True
+        self.global_mesh_scale = 1.0
+        self.use_normals = True
+        self.use_copy_texture_separate_directory = True
 
-        return tmp
 
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def addFace(self, command, mesh, is_face2 = False):
-        face = []
-        for i in range(1, len(command)):
+class CsvObject:
+    def is_potential_path(self, line: str) -> bool:
+        images = [".bmp", ".gi", ".jpg", ".jpeg", ".png"]
+
+        for image in images:
             try:
-                v = int(command[i])
-                face.append(v)
+                i = line.index(image)
             except ValueError:
-                pass
+                i = -1
 
-        b_face = []
-        b_face.append(face[0])
+            if i >= 0:
+                return True
 
-        # Invert vertices order
-        for i in range(len(face)-1, 0, -1):
-            b_face.append(face[i])
+        return False
 
-        mesh.faces_list.append(tuple(b_face))
-        mesh.is_addFace2 = is_face2
+    def create_cube(self, mesh: CsvMesh, sx: float, sy: float, sz: float) -> None:
+        v = len(mesh.vertex_list)
 
-        #if is_face2:
-            #mesh.faces_list.append(tuple(face))
+        mesh.vertex_list.append((sx, sy, -sz))
+        mesh.vertex_list.append((sx, -sy, -sz))
+        mesh.vertex_list.append((-sx, -sy, -sz))
+        mesh.vertex_list.append((-sx, sy, -sz))
+        mesh.vertex_list.append((sx, sy, sz))
+        mesh.vertex_list.append((sx, -sy, sz))
+        mesh.vertex_list.append((-sx, -sy, sz))
+        mesh.vertex_list.append((-sx, sy, sz))
 
-    # ---------------------------------------------------------------------------
-    #
-    # ---------------------------------------------------------------------------
-    def createCube(self, command, mesh):
+        mesh.faces_list.append((v + 0, v + 1, v + 2, v + 3))
+        mesh.faces_list.append((v + 0, v + 4, v + 5, v + 1))
+        mesh.faces_list.append((v + 0, v + 3, v + 7, v + 4))
+        mesh.faces_list.append((v + 6, v + 5, v + 4, v + 7))
+        mesh.faces_list.append((v + 6, v + 7, v + 3, v + 2))
+        mesh.faces_list.append((v + 6, v + 2, v + 1, v + 5))
 
-        x = 0
-        y = 0
-        z = 0
+    def create_cylinder(self, mesh: CsvMesh, n: int, r1: float, r2: float, h: float) -> None:
+        # Parameters
+        uppercap = r1 > 0.0
+        lowercap = r2 > 0.0
+        m = (1 if uppercap else 0) + (1 if lowercap else 0)
+        r1 = abs(r1)
+        r2 = abs(r2)
 
-        try:
-            x = float(command[1])
-            y = float(command[2])
-            z = float(command[3])
-        except Exception as ex:
-            print(ex)
-            return
+        # Initialization
+        v = len(mesh.vertex_list)
+        d = 2.0 * math.pi / float(n)
+        g = 0.5 * h
+        t = 0.0
 
-        # Add vertices
-        v = (x, y, -z)
-        mesh.vertex_list.append(v)
-        v = (x, -y, -z)
-        mesh.vertex_list.append(v)
-        v = (-x, -y, -z)
-        mesh.vertex_list.append(v)
-        v = (-x, y, -z)
-        mesh.vertex_list.append(v)
-        v = (x, y, z)
-        mesh.vertex_list.append(v)
-        v = (x, -y, z)
-        mesh.vertex_list.append(v)
-        v = (-x, -y, z)
-        mesh.vertex_list.append(v)
-        v = (-x, y, z)
-        mesh.vertex_list.append(v)
+        # Vertices
+        for i in range(n):
+            dx = math.cos(t)
+            dz = math.sin(t)
+            lx = dx * r2
+            lz = dz * r2
+            ux = dx * r1
+            uz = dz * r1
+            mesh.vertex_list.append((ux, g, uz))
+            mesh.vertex_list.append((lx, -g, lz))
+            t += d
 
-        # Add faces
-        face = (0, 1, 2, 3)
-        mesh.faces_list.append(face)
-        face = (0, 4, 5, 1)
-        mesh.faces_list.append(face)
-        face = (0, 3, 7, 4)
-        mesh.faces_list.append(face)
-        face = (6, 5, 4, 7)
-        mesh.faces_list.append(face)
-        face = (6, 7, 3, 2)
-        mesh.faces_list.append(face)
-        face = (6, 2, 1, 5)
-        mesh.faces_list.append(face)
+        # Faces
+        for i in range(n):
+            i0 = (2 * i + 2) % (2 * n)
+            i1 = (2 * i + 3) % (2 * n)
+            i2 = 2 * i + 1
+            i3 = 2 * i
+            mesh.faces_list.append((v + i0, v + i1, v + i2, v + i3))
 
-    # ---------------------------------------------------------------------------
-    #
-    # ---------------------------------------------------------------------------
-    def createCylinder(self, command, mesh):
-
-        n = 0
-        r1 = 0.0
-        r2 = 0.0
-        h = 0.0
-
-        try:
-            n = int(command[1])
-            r1 = float(command[2])
-            r2 = float(command[3])
-            h = float(command[4])
-        except Exception as ex:
-            print(ex)
-            return
-
-        # Vertices generation
-        for i in range(0, n):
-            x = round(r1 * math.cos(2 * math.pi * i / n), 6)
-            y = round(h / 2.0, 4)
-            z = round(r1 * math.sin(2 * math.pi * i / n), 6)
-            mesh.vertex_list.append((x, y, z))
-
-            x = round(r2 * math.cos(2 * math.pi * i / n), 6)
-            y = round(-h / 2.0, 4)
-            z = round(r2 * math.sin(2 * math.pi * i / n), 6)
-            mesh.vertex_list.append((x, y, z))
-
-        # Side faces generation
-        for i in range(0, n - 1):
-            face = (2 * (i + 1), 2 * (i + 1) + 1, 2 * (i + 1) - 1, 2 * i)
-            mesh.faces_list.append(face)
-
-        mesh.faces_list.append((0, 1, 2 * n - 1, 2 * n - 2))
-
-        # Lower face generation
-
-        if r2 > 0:
+        for i in range(m):
             face = []
-            for i in range(n-1, -1, -1):
-                face.append(2*i)
+
+            for j in range(n):
+                if i == 0 and lowercap:
+                    # lower cap
+                    face.append(v + 2 * j + 1)
+                else:
+                    # upper cap
+                    face.append(v + 2 * (n - j - 1))
+
             mesh.faces_list.append(tuple(face))
 
-        # Upper face generation
-        if r1 > 0:
-            face = []
-            for i in range(0, n):
-                face.append(2*i + 1)
-            mesh.faces_list.append(tuple(face))
+    def apply_translation(self, mesh: CsvMesh, x: float, y: float, z: float) -> None:
+        for i in range(len(mesh.vertex_list)):
+            mesh.vertex_list[i] = (mesh.vertex_list[i][0] + x, mesh.vertex_list[i][1] + y, mesh.vertex_list[i][2] + z)
 
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def Translate(self, command, mesh):
+    def apply_scale(self, mesh: CsvMesh, x: float, y: float, z: float) -> None:
+        for i in range(len(mesh.vertex_list)):
+            mesh.vertex_list[i] = (mesh.vertex_list[i][0] * x, mesh.vertex_list[i][1] * y, mesh.vertex_list[i][2] * z)
 
-        try:
-            x = float(command[1])
-            y = float(command[2])
-            z = float(command[3])
-        except Exception as ex:
-            print(ex)
-            return
+        if x * y * z < 0.0:
+            for i in range(len(mesh.faces_list)):
+                mesh.faces_list[i] = tuple(reversed(mesh.faces_list[i]))
 
-        for i, v in enumerate(mesh.vertex_list):
-            tmp = list(v)
-            tmp[0] = tmp[0] + x
-            tmp[1] = tmp[1] + y
-            tmp[2] = tmp[2] + z
-            v = tuple(tmp)
-            mesh.vertex_list[i] = v
+    def apply_rotation(self, mesh: CsvMesh, r: Tuple[float, float, float], angle: float) -> None:
+        cosine_of_angle = math.cos(angle)
+        sine_of_angle = math.sin(angle)
+        cosine_complement = 1.0 - cosine_of_angle
 
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def TranslateAll(self, command, meshes_list, mesh):
-        for m in meshes_list:
-            self.Translate(command, m)
+        for i in range(len(mesh.vertex_list)):
+            x = (cosine_of_angle + cosine_complement * r[0] * r[0]) * mesh.vertex_list[i][0] + (cosine_complement * r[0] * r[1] - sine_of_angle * r[2]) * mesh.vertex_list[i][1] + (cosine_complement * r[0] * r[2] + sine_of_angle * r[1]) * mesh.vertex_list[i][2]
+            y = (cosine_of_angle + cosine_complement * r[1] * r[1]) * mesh.vertex_list[i][1] + (cosine_complement * r[0] * r[1] + sine_of_angle * r[2]) * mesh.vertex_list[i][0] + (cosine_complement * r[1] * r[2] - sine_of_angle * r[0]) * mesh.vertex_list[i][2]
+            z = (cosine_of_angle + cosine_complement * r[2] * r[2]) * mesh.vertex_list[i][2] + (cosine_complement * r[0] * r[2] - sine_of_angle * r[1]) * mesh.vertex_list[i][0] + (cosine_complement * r[1] * r[2] + sine_of_angle * r[0]) * mesh.vertex_list[i][1]
+            mesh.vertex_list[i] = (x, y, z)
 
-        self.Translate(command, mesh)
+    def apply_shear(self, mesh: CsvMesh, d: Tuple[float, float, float], s: Tuple[float, float, float], r: float) -> None:
+        for i in range(len(mesh.vertex_list)):
+            n = r * (d[0] * mesh.vertex_list[i][0] + d[1] * mesh.vertex_list[i][1] + d[2] * mesh.vertex_list[i][2])
+            mesh.vertex_list[i] = (mesh.vertex_list[i][0] + s[0] * n, mesh.vertex_list[i][1] + s[1] * n, mesh.vertex_list[i][2] + s[2] * n)
 
+    def apply_mirror(self, mesh: CsvMesh, vx: bool, vy: bool, vz: bool):
+        for i in range(len(mesh.vertex_list)):
+            x = mesh.vertex_list[i][0] * -1.0 if vx else mesh.vertex_list[i][0]
+            y = mesh.vertex_list[i][1] * -1.0 if vx else mesh.vertex_list[i][1]
+            z = mesh.vertex_list[i][2] * -1.0 if vx else mesh.vertex_list[i][2]
+            mesh.vertex_list[i] = (x, y, z)
 
-    # ---------------------------------------------------------------------------
-    #
-    # ---------------------------------------------------------------------------
-    def Rotate(self, command, mesh):
-        try:
-            ux = float(command[1])
-            uy = float(command[2])
-            uz = float(command[3])
-            angle = -float(command[4]) * math.pi / 180.0
+        num_flips = 0
 
-            len = math.sqrt(ux * ux + uy * uy + uz * uz)
+        if vx:
+            num_flips += 1
 
-            try:
+        if vy:
+            num_flips += 1
 
-                # Normalize axis vector
-                ex = ux / len
-                ey = uy / len
-                ez = uz / len
+        if vz:
+            num_flips += 1
 
-                # Rotate vertex by Rodrigue's formula
-                for i, v in enumerate(mesh.vertex_list):
-                    tmp = list(v)
+        if num_flips % 2 != 0:
+            for i in range(len(mesh.faces_list)):
+                mesh.faces_list[i] = tuple(reversed(mesh.faces_list[i]))
 
-                    c = ex * tmp[0] + ey * tmp[1] + ez * tmp[2]
+    def normalize(self, v: Tuple[float, float, float]) -> Tuple[float, float, float]:
+        norm = v[0] * v[0] + v[1] * v[1] + v[2] * v[2]
 
-                    nx = ez * tmp[1] - ey * tmp[2]
-                    ny = ex * tmp[2] - ez * tmp[0]
-                    nz = ey * tmp[0] - ex * tmp[1]
+        if norm == 0.0:
+            return v
 
-                    tmp[0] = round(c * (1 - math.cos(angle)) * ex + nx * math.sin(angle) + tmp[0] * math.cos(angle), 4)
-                    tmp[1] = round(c * (1 - math.cos(angle)) * ey + ny * math.sin(angle) + tmp[1] * math.cos(angle), 4)
-                    tmp[2] = round(c * (1 - math.cos(angle)) * ez + nz * math.sin(angle) + tmp[2] * math.cos(angle), 4)
-                    v = tuple(tmp)
-                    mesh.vertex_list[i] = v
+        factor = 1.0 / math.sqrt(norm)
+        return (v[0] * factor, v[1] * factor, v[2] * factor)
 
-            except Exception as ex:
-                print(ex)
-                return
+    def load_csv(self, option: ImportOption, file_path: str) -> List[CsvMesh]:
+        meshes_list = []  # type: List[CsvMesh]
 
-        except Exception as ex:
-            print(ex)
-            return
-
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def RotateAll(self, command, meshes_list, mesh):
-        for m in meshes_list:
-            self.Rotate(command, m)
-
-        self.Rotate(command, mesh)
-
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def Scale(self, command, mesh):
-        try:
-            sx = float(command[1])
-            sy = float(command[2])
-            sz = float(command[3])
-        except Exception as ex:
-            print(ex)
-            return
-
-        for i, v in enumerate(mesh.vertex_list):
-            tmp = list(v)
-            tmp[0] = sx * tmp[0]
-            tmp[1] = sy * tmp[1]
-            tmp[2] = sx * tmp[2]
-            v = tuple(tmp)
-            mesh.vertex_list[i] = v
-
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def ScaleAll(self, command, meshes_list, mesh):
-        for m in meshes_list:
-            self.Scale(command, m)
-
-        self.Scale(command, mesh)
-
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def Mirror(self, command, mesh):
-        try:
-            mx = int(command[1])
-            my = int(command[2])
-            mz = int(command[3])
-        except Exception as ex:
-            print(ex)
-            return
-
-        for i, v in enumerate(mesh.vertex_list):
-            tmp = list(v)
-
-            if mx != 0:
-                tmp[0] = -tmp[0]
-
-            if my != 0:
-                tmp[1] = -tmp[1]
-
-            if mz != 0:
-                tmp[2] = -tmp[2]
-
-            v = tuple(tmp)
-            mesh.vertex_list[i] = v
-
-    # ---------------------------------------------------------------------------
-    #
-    # ---------------------------------------------------------------------------
-    def MirrorAll(self, command, meshes_list, mesh):
-        for m in meshes_list:
-            self.Mirror(command, m)
-
-        self.Mirror(command, mesh)
-
-    # ---------------------------------------------------------------------------
-    #
-    # ---------------------------------------------------------------------------
-    def Shear(self, command, mesh):
-        try:
-            dx = float(command[1])
-            dy = float(command[2])
-            dz = float(command[3])
-
-            sx = float(command[4])
-            sy = float(command[5])
-            sz = float(command[6])
-
-            r = float(command[7])
-        except Exception as ex:
-            print(ex)
-            return
-
-        # normalize vectors
-        d_len = math.sqrt(dx * dx + dy * dy + dz * dz)
-
-        if d_len == 0:
-            return
-
-        dx /= d_len
-        dy /= d_len
-        dz /= d_len
-
-        s_len = math.sqrt(sx * sx + sy * sy + sz * sz)
-
-        if s_len == 0:
-            return
-
-        sx /= s_len
-        sy /= s_len
-        sz /= s_len
-
-        for i, v in enumerate(mesh.vertex_list):
-            tmp = list(v)
-            n = r * (dx * tmp[0] + dy * tmp[1] + dz * tmp[2])
-            tmp[0] += sx * n;
-            tmp[1] += sy * n;
-            tmp[2] += sz * n;
-
-            vertex = tuple(tmp)
-            mesh.vertex_list[i] = vertex
-
-
-    # ---------------------------------------------------------------------------
-    #
-    # ---------------------------------------------------------------------------
-    def ShearAll(self, command, meshes_list, mesh):
-        for m in meshes_list:
-            self.Shear(command, m)
-
-        self.Shear(command, mesh)
-
-    # ---------------------------------------------------------------------------
-    #
-    # ---------------------------------------------------------------------------
-    def toRightBasis(self, meshes_list):
-        for m in meshes_list:
-            command = [None, '0', '0', '1']
-            self.Mirror(command, m)
-            command = [None, '1', '0', '0', '90']
-            self.Rotate(command, m)
-
-    # ---------------------------------------------------------------------------
-    #
-    # ---------------------------------------------------------------------------
-    def toLeftBasis(self, meshes_list):
-        for m in meshes_list:
-            command = [None, '1', '0', '0', '-90']
-            self.Rotate(command, m)
-            command = [None, '0', '0', '1']
-            self.Mirror(command, m)
-
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def checkCmd(self, cmd, patern):
-        return cmd.upper().lower() == patern.upper().lower()
-
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def loadTexture(self, command, mesh):
-        mesh.texture_file = command[1]
-
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def setColor(self, command, mesh):
-        for i in range(1, len(command)):
-            try:
-                mesh.diffuse_color.append(int(command[i]))
-            except:
-                mesh.diffuse_color.append(255)
-
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def setTextureCoordinates(self, command, mesh):
-        try:
-            v_idx = int(command[1])
-            tx = float(command[2])
-            ty = float(command[3])
-
-            mesh.texcoords_list.append([v_idx, tx, ty])
-        except:
-            return
-
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def transformUV(self, meshes_list):
-
-        for m in meshes_list:
-            for tc in m.texcoords_list:
-                if tc[2] > m.ty_max:
-                    m.ty_max = tc[2]
-
-            for i, tc in enumerate(m.texcoords_list):
-                tc[2] = m.ty_max - tc[2]
-                m.texcoords_list[i] = tc
-
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def loadCSV(self, filePath, is_transform = False):
-
-        meshes_list = []
+        logger.info("Loading file: " + file_path)
 
         # Open CSV file
         try:
-            f = open(filePath, 'rt')
+            with open(file_path, "rb") as f:
+                binary = f.read()
+
+            csv_text = binary.decode(chardet.detect(binary)["encoding"]).splitlines()
         except Exception as ex:
-            print(ex)
+            logger.critical(ex)
             return meshes_list
 
-        # Create temporary mesh
+        # Parse CSV file
+        # Delete comments
+        comment_started = False
 
-        # Read all file
-        csv_text = f.read().split('\n')
-        f.close()
+        for i in range(len(csv_text)):
+            # Strip OpenBVE original standard comments
+            try:
+                j = csv_text[i].index(";")
+            except ValueError:
+                j = -1
 
-        # Find first mesh
-        idx = 0
-        mesh_begin_idx = []
+            if j >= 0:
+                csv_text[i] = csv_text[i][:j]
 
-        for idx, line in enumerate(csv_text):
-            command = self.parseLine(line)
-            if self.checkCmd(command[0], "CreateMeshBuilder"):
-               mesh_begin_idx.append(idx)
+            # Strip double backslash comments
+            try:
+                k = csv_text[i].index("//")
+            except ValueError:
+                k = -1
 
+            if k >= 0:
+                if self.is_potential_path(csv_text[i]):
+                    # HACK: Handles malformed potential paths
+                    continue
 
-        for idx in range(0, len(mesh_begin_idx)):
+                csv_text[i] = csv_text[i][:k]
 
-            mesh = CSVmesh()
+            # Strip star backslash comments
+            if not comment_started:
+                try:
+                    m = csv_text[i].index("/*")
+                except ValueError:
+                    m = -1
 
-            a = mesh_begin_idx[idx]
+                if m >= 0:
+                    comment_started = True
+                    part1 = csv_text[i][:1]
+                    part2 = ""
 
-            if idx + 1 >= len(mesh_begin_idx):
-                b = len(csv_text)
-            else:
-                b = mesh_begin_idx[idx+1]
-
-            for j in range(a, b):
-
-                command = self.parseLine(csv_text[j])
-
-                if self.checkCmd(command[0], "AddVertex"):
                     try:
-                        x = float(command[1])
-                        y = float(command[2])
-                        z = float(command[3])
-                        vertex = (x, y, z)
-                        mesh.vertex_list.append(vertex)
+                        n = csv_text[i].index("*/")
                     except ValueError:
-                        pass
+                        n = -1
 
-                if self.checkCmd(command[0], "AddFace"):
-                    self.addFace(command, mesh)
+                    if n >= 0:
+                        part2 = csv_text[i][n + 2:]
 
-                if self.checkCmd(command[0], "AddFace2"):
-                    self.addFace(command, mesh, True)
+                    csv_text[i] = part1 + part2
+            else:
+                try:
+                    m = csv_text[i].index("*/")
+                except ValueError:
+                    m = -1
 
-                # Create cube
-                if self.checkCmd(command[0], "Cube"):
-                    self.createCube(command, mesh)
+                if m >= 0:
+                    comment_started = True
 
-                # Create cylinder
-                if self.checkCmd(command[0], "Cylinder"):
-                    self.createCylinder(command, mesh)
+                    if m + 2 != len(csv_text[i]):
+                        csv_text[i] = csv_text[i][m + 2:]
+                    else:
+                        csv_text[i] = ""
+                else:
+                    csv_text[i] = ""
 
-                # Translate mesh
-                if self.checkCmd(command[0], "Translate"):
-                    self.Translate(command, mesh)
+        # Parse lines
+        mesh = None
 
-                # Rotate mesh
-                if self.checkCmd(command[0], "Rotate"):
-                    self.Rotate(command, mesh)
+        for i in range(len(csv_text)):
+            # Collect arguments
+            arguments = csv_text[i].split(",")
 
-                # Translate current mesh and all previos meshes
-                if self.checkCmd(command[0], "TranslateAll"):
-                    self.TranslateAll(command, meshes_list, mesh)
+            for j in range(len(arguments)):
+                arguments[j] = arguments[j].strip()
 
-                # Rotate cureent mesh and all previos meshes
-                if self.checkCmd(command[0], "RotateAll"):
-                    self.RotateAll(command, meshes_list, mesh)
+            command = arguments.pop(0)
 
-                # Scale meshes
-                if self.checkCmd(command[0], "Scale"):
-                    self.Scale(command, mesh)
+            if command == "":
+                continue
 
-                if self.checkCmd(command[0], "ScaleAll"):
-                    self.ScaleAll(command, meshes_list, mesh)
+            # Parse terms
+            if command.lower() == "CreateMeshBuilder".lower():
+                if len(arguments) > 0:
+                    logger.warning("0 arguments are expected in " + command + " at line " + str(i + 1))
 
-                # Mirror meshes
-                if self.checkCmd(command[0], "Mirror"):
-                    self.Mirror(command, mesh)
+                if mesh is not None:
+                    meshes_list.append(mesh)
 
-                if self.checkCmd(command[0], "MirrorAll"):
-                    self.MirrorAll(command, meshes_list, mesh)
+                mesh = CsvMesh()
 
-                # Shear meshes
-                if self.checkCmd(command[0], "Shear"):
-                    self.Shear(command, mesh)
+            elif mesh is None:
+                logger.error(command + " before the first CreateMeshBuilder are ignored at line " + str(i + 1))
 
-                if self.checkCmd(command[0], "ShearAll"):
-                    self.ShearAll(command, meshes_list, mesh)
+            elif command.lower() == "AddVertex".lower():
+                if len(arguments) > 6:
+                    logger.warning("At most 6 arguments are expected in " + command + " at line " + str(i + 1))
 
-                # Load textures
-                if self.checkCmd(command[0], "LoadTexture"):
-                    self.loadTexture(command, mesh)
+                try:
+                    vx = float(arguments[0])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument vX in " + command + " at line " + str(i + 1))
 
-                # Set diffuse color
-                if self.checkCmd(command[0], "SetColor"):
-                    self.setColor(command, mesh)
+                    vx = 0.0
 
-                # Set texture coordinates
-                if self.checkCmd(command[0], "SetTextureCoordinates"):
-                    self.setTextureCoordinates(command, mesh)
+                try:
+                    vy = float(arguments[1])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument vY in " + command + " at line " + str(i + 1))
 
+                    vy = 0.0
+
+                try:
+                    vz = float(arguments[2])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument vZ in " + command + " at line " + str(i + 1))
+
+                    vz = 0.0
+
+                if len(arguments) >= 4:
+                    logger.info("This add-on ignores nX, nY and nZ in " + command + " at line " + str(i + 1))
+
+                mesh.vertex_list.append((vx, vy, vz))
+
+            elif command.lower() == "AddFace".lower() or command.lower() == "AddFace2".lower():
+                if len(arguments) < 3:
+                    logger.error("At least 3 arguments are required in " + command + " at line " + str(i + 1))
+                else:
+                    q = True
+                    a = []
+
+                    for j in range(len(arguments)):
+                        try:
+                            a.append(int(arguments[j]))
+                        except Exception as ex:
+                            if type(ex) is not IndexError:
+                                logger.error("v" + str(j) + " is invalid in " + command + " at line " + str(i + 1))
+
+                            q = False
+                            break
+
+                        if a[j] < 0 or a[j] >= len(mesh.vertex_list):
+                            logger.error("v" + str(j) + " references a non-existing vertex in " + command + " at line " + str(i + 1))
+                            q = False
+                            break
+
+                        if a[j] > 65535:
+                            logger.error("v" + str(j) + " indexes a vertex above 65535 which is not currently supported in " + command + " at line " + str(i + 1))
+                            q = False
+                            break
+
+                    if q:
+                        mesh.faces_list.append(tuple(a))
+
+                        if command.lower() == "AddFace2".lower():
+                            if option.use_split_add_face2:
+                                mesh.faces_list.append(tuple(reversed(a)))
+                            else:
+                                mesh.use_add_face2 = True
+
+            elif command.lower() == "Cube".lower():
+                if len(arguments) > 3:
+                    logger.warning("At most 3 arguments are expected in " + command + " at line " + str(i + 1))
+
+                try:
+                    x = float(arguments[0])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument HalfWidth in " + command + " at line " + str(i + 1))
+
+                    x = 1.0
+
+                try:
+                    y = float(arguments[1])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument HalfHeight in " + command + " at line " + str(i + 1))
+
+                    y = 1.0
+
+                try:
+                    z = float(arguments[2])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument HalfDepth in " + command + " at line " + str(i + 1))
+
+                    z = 1.0
+
+                self.create_cube(mesh, x, y, z)
+
+            elif command.lower() == "Cylinder".lower():
+                if len(arguments) > 4:
+                    logger.warning("At most 4 arguments are expected in " + command + " at line " + str(i + 1))
+
+                try:
+                    n = int(arguments[0])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument n in " + command + " at line " + str(i + 1))
+
+                    n = 8
+
+                if n < 2:
+                    logger.error("n is expected to be at least 2 in " + command + " at line " + str(i + 1))
+                    n = 8
+
+                try:
+                    r1 = float(arguments[1])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument UpperRadius in " + command + " at line " + str(i + 1))
+
+                    r1 = 1.0
+
+                try:
+                    r2 = float(arguments[2])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument LowerRadius in " + command + " at line " + str(i + 1))
+
+                    r2 = 1.0
+
+                try:
+                    h = float(arguments[3])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Height in " + command + " at line " + str(i + 1))
+
+                    h = 1.0
+
+                self.create_cylinder(mesh, n, r1, r2, h)
+
+            elif command.lower() == "Translate".lower() or command.lower() == "TranslateAll".lower():
+                if len(arguments) > 3:
+                    logger.warning("At most 3 arguments are expected in " + command + " at line " + str(i + 1))
+
+                try:
+                    x = float(arguments[0])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument X in " + command + " at line " + str(i + 1))
+
+                    x = 0.0
+
+                try:
+                    y = float(arguments[1])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Y in " + command + " at line " + str(i + 1))
+
+                    y = 0.0
+
+                try:
+                    z = float(arguments[2])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Z in " + command + " at line " + str(i + 1))
+
+                    z = 0.0
+
+                self.apply_translation(mesh, x, y, z)
+
+                if command.lower() == "TranslateAll".lower():
+                    for other_mesh in meshes_list:
+                        self.apply_translation(other_mesh, x, y, z)
+
+            elif command.lower() == "Scale".lower() or command.lower() == "ScaleAll".lower():
+                if len(arguments) > 3:
+                    logger.warning("At most 3 arguments are expected in " + command + " at line " + str(i + 1))
+
+                try:
+                    x = float(arguments[0])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument X in " + command + " at line " + str(i + 1))
+
+                    x = 1.0
+
+                if x == 0.0:
+                    logger.error("X is required to be different from zero in " + command + " at line " + str(i + 1))
+                    x = 1.0
+
+                try:
+                    y = float(arguments[1])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Y in " + command + " at line " + str(i + 1))
+
+                    y = 1.0
+
+                if y == 0.0:
+                    logger.error("Y is required to be different from zero in " + command + " at line " + str(i + 1))
+                    y = 1.0
+
+                try:
+                    z = float(arguments[2])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Z in " + command + " at line " + str(i + 1))
+
+                    z = 1.0
+
+                if z == 0.0:
+                    logger.error("Z is required to be different from zero in " + command + " at line " + str(i + 1))
+                    z = 1.0
+
+                self.apply_scale(mesh, x, y, z)
+
+                if command.lower() == "ScaleAll".lower():
+                    for other_mesh in meshes_list:
+                        self.apply_scale(other_mesh, x, y, z)
+
+            elif command.lower() == "Rotate".lower() or command.lower() == "RotateAll".lower():
+                if len(arguments) > 4:
+                    logger.warning("At most 4 arguments are expected in " + command + " at line " + str(i + 1))
+
+                try:
+                    rx = float(arguments[0])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument X in " + command + " at line " + str(i + 1))
+
+                    rx = 0.0
+
+                try:
+                    ry = float(arguments[1])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Y in " + command + " at line " + str(i + 1))
+
+                    ry = 0.0
+
+                try:
+                    rz = float(arguments[2])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Z in " + command + " at line " + str(i + 1))
+
+                    rz = 0.0
+
+                try:
+                    angle = float(arguments[3])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Angle in " + command + " at line " + str(i + 1))
+
+                    angle = 0.0
+
+                t = rx * rx + ry * ry + rz * rz
+
+                if t == 0.0:
+                    rz = 1.0
+                    ry = rz = 0.0
+                    t = 1.0
+
+                if angle != 0.0:
+                    t = 1.0 / math.sqrt(t)
+                    rx *= t
+                    ry *= t
+                    rz *= t
+                    angle *= math.pi / 180.0
+
+                    self.apply_rotation(mesh, (rx, ry, rz), angle)
+
+                    if command.lower() == "RotateAll".lower():
+                        for other_mesh in meshes_list:
+                            self.apply_rotation(other_mesh, (rx, ry, rz), angle)
+
+            elif command.lower() == "Shear".lower() or command.lower() == "ShearAll".lower():
+                if len(arguments) > 7:
+                    logger.warning("At most 7 arguments are expected in " + command + " at line " + str(i + 1))
+
+                try:
+                    dx = float(arguments[0])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument dX in " + command + " at line " + str(i + 1))
+
+                    dx = 0.0
+
+                try:
+                    dy = float(arguments[1])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument dY in " + command + " at line " + str(i + 1))
+
+                    dy = 0.0
+
+                try:
+                    dz = float(arguments[2])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument dZ in " + command + " at line " + str(i + 1))
+
+                    dz = 0.0
+
+                try:
+                    sx = float(arguments[3])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument sX in " + command + " at line " + str(i + 1))
+
+                    sx = 0.0
+
+                try:
+                    sy = float(arguments[4])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument sY in " + command + " at line " + str(i + 1))
+
+                    sy = 0.0
+
+                try:
+                    sz = float(arguments[5])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument sZ in " + command + " at line " + str(i + 1))
+
+                    sz = 0.0
+
+                try:
+                    r = float(arguments[6])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Ratio in " + command + " at line " + str(i + 1))
+
+                    r = 0.0
+
+                d = self.normalize((dx, dy, dz))
+                s = self.normalize((sx, sy, sz))
+                self.apply_shear(mesh, d, s, r)
+
+                if command.lower() == "ShearAll".lower():
+                    for other_mesh in meshes_list:
+                        self.apply_shear(other_mesh, d, s, r)
+
+            elif command.lower() == "Mirror".lower() or command.lower() == "MirrorAll".lower():
+                if len(arguments) > 6:
+                    logger.warning("At most 6 arguments are expected in " + command + " at line " + str(i + 1))
+
+                try:
+                    vx = float(arguments[0])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument vX in " + command + " at line " + str(i + 1))
+
+                    vx = 0.0
+
+                try:
+                    vy = float(arguments[1])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument vY in " + command + " at line " + str(i + 1))
+
+                    vy = 0.0
+
+                try:
+                    vz = float(arguments[2])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument vZ in " + command + " at line " + str(i + 1))
+
+                    vz = 0.0
+
+                if len(arguments) >= 4:
+                    logger.info("This add-on ignores nX, nY and nZ in " + command + " at line " + str(i + 1))
+
+                self.apply_mirror(mesh, vx != 0.0, vy != 0.0, vz != 0.0)
+
+                if command.lower() == "MirrorAll".lower():
+                    for other_mesh in meshes_list:
+                        self.apply_mirror(other_mesh, vx != 0.0, vy != 0.0, vz != 0.0)
+
+            elif command.lower() == "SetColor".lower():
+                if len(arguments) > 4:
+                    logger.warning("At most 4 arguments are expected in " + command + " at line " + str(i + 1))
+
+                try:
+                    red = int(arguments[0])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Red in " + command + " at line " + str(i + 1))
+
+                    red = 0
+
+                if red < 0 or red > 255:
+                    logger.error("Red is required to be within the range from 0 to 255 in " + command + " at line " + str(i + 1))
+                    red = 0 if red < 0 else 255
+
+                try:
+                    green = int(arguments[1])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Green in " + command + " at line " + str(i + 1))
+
+                    green = 0
+
+                if green < 0 or green > 255:
+                    logger.error("Green is required to be within the range from 0 to 255 in " + command + " at line " + str(i + 1))
+                    green = 0 if green < 0 else 255
+
+                try:
+                    blue = int(arguments[2])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Blue in " + command + " at line " + str(i + 1))
+
+                    blue = 0
+
+                if blue < 0 or blue > 255:
+                    logger.error("Blue is required to be within the range from 0 to 255 in " + command + " at line " + str(i + 1))
+                    blue = 0 if blue < 0 else 255
+
+                try:
+                    alpha = int(arguments[3])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Alpha in " + command + " at line " + str(i + 1))
+
+                    alpha = 0
+
+                if alpha < 0 or alpha > 255:
+                    logger.error("Alpha is required to be within the range from 0 to 255 in " + command + " at line " + str(i + 1))
+                    alpha = 0 if alpha < 0 else 255
+
+                mesh.diffuse_color = (red, green, blue, alpha)
+
+            elif command.lower() == "SetEmissiveColor".lower():
+                if len(arguments) > 3:
+                    logger.warning("At most 3 arguments are expected in " + command + " at line " + str(i + 1))
+
+                try:
+                    red = int(arguments[0])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Red in " + command + " at line " + str(i + 1))
+
+                    red = 0
+
+                if red < 0 or red > 255:
+                    logger.error("Red is required to be within the range from 0 to 255 in " + command + " at line " + str(i + 1))
+                    red = 0 if red < 0 else 255
+
+                try:
+                    green = int(arguments[1])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Green in " + command + " at line " + str(i + 1))
+
+                    green = 0
+
+                if green < 0 or green > 255:
+                    logger.error("Green is required to be within the range from 0 to 255 in " + command + " at line " + str(i + 1))
+                    green = 0 if green < 0 else 255
+
+                try:
+                    blue = int(arguments[2])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Blue in " + command + " at line " + str(i + 1))
+
+                    blue = 0
+
+                if blue < 0 or blue > 255:
+                    logger.error("Blue is required to be within the range from 0 to 255 in " + command + " at line " + str(i + 1))
+                    blue = 0 if blue < 0 else 255
+
+                mesh.use_emissive_color = True
+                mesh.emissive_color = (red, green, blue)
+
+            elif command.lower() == "SetDecalTransparentColor".lower():
+                if len(arguments) > 3:
+                    logger.warning("At most 3 arguments are expected in " + command + " at line " + str(i + 1))
+
+                try:
+                    red = int(arguments[0])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Red in " + command + " at line " + str(i + 1))
+
+                    red = 0
+
+                if red < 0 or red > 255:
+                    logger.error("Red is required to be within the range from 0 to 255 in " + command + " at line " + str(i + 1))
+                    red = 0 if red < 0 else 255
+
+                try:
+                    green = int(arguments[1])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Green in " + command + " at line " + str(i + 1))
+
+                    green = 0
+
+                if green < 0 or green > 255:
+                    logger.error("Green is required to be within the range from 0 to 255 in " + command + " at line " + str(i + 1))
+                    green = 0 if green < 0 else 255
+
+                try:
+                    blue = int(arguments[2])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Blue in " + command + " at line " + str(i + 1))
+
+                    blue = 0
+
+                if blue < 0 or blue > 255:
+                    logger.error("Blue is required to be within the range from 0 to 255 in " + command + " at line " + str(i + 1))
+                    blue = 0 if blue < 0 else 255
+
+                mesh.use_transparent_color = True
+                mesh.transparent_color = (red, green, blue)
+
+            elif command.lower() == "SetBlendMode".lower() or command.lower() == "SetBlendingMode".lower():
+                if len(arguments) > 3:
+                    logger.warning("At most 3 arguments are expected in " + command + " at line " + str(i + 1))
+
+                try:
+                    if arguments[0].lower() == "normal":
+                        mesh.blend_mode = "Normal"
+                    elif arguments[0].lower() == "additive" or arguments[0].lower() == "glow":
+                        mesh.blend_mode = "Additive"
+                    else:
+                        logger.error("The given BlendMode is not supported in " + command + " at line " + str(i + 1))
+                        mesh.blend_mode = "Normal"
+                except Exception:
+                    mesh.blend_mode = "Normal"
+
+                try:
+                    mesh.glow_half_distance = int(arguments[1])
+                except Exception:
+                    logger.error("Invalid argument GlowHalfDistance in " + command + " at line " + str(i + 1))
+                    mesh.glow_half_distance = 0
+
+                try:
+                    if arguments[2].lower() == "DivideExponent2".lower():
+                        mesh.glow_attenuation_mode = "DivideExponent2"
+                    elif arguments[2].lower() == "DivideExponent4".lower():
+                        mesh.glow_attenuation_mode = "DivideExponent4"
+                    else:
+                        logger.error("The given GlowAttenuationMode is not supported in " + command + " at line " + str(i + 1))
+                        mesh.glow_attenuation_mode = "DivideExponent4"
+                except Exception:
+                    mesh.glow_attenuation_mode = "DivideExponent4"
+
+            elif command.lower() == "LoadTexture".lower():
+                if len(arguments) > 2:
+                    logger.warning("At most 2 arguments are expected in " + command + " at line " + str(i + 1))
+
+                try:
+                    mesh.daytime_texture_file = str(pathlib.Path(file_path).joinpath("..", arguments[0]).resolve())
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument DaytimeTexture in " + command + " at line " + str(i + 1))
+
+                    mesh.daytime_texture_file = ""
+
+                try:
+                    mesh.nighttime_texture_file = str(pathlib.Path(file_path).joinpath("..", arguments[1]).resolve())
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument NighttimeTexture in " + command + " at line " + str(i + 1))
+
+                    mesh.nighttime_texture_file = ""
+
+            elif command.lower() == "SetTextureCoordinates".lower():
+                if len(arguments) > 3:
+                    logger.warning("At most 3 arguments are expected in " + command + " at line " + str(i + 1))
+
+                try:
+                    j = int(arguments[0])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument VertexIndex in " + command + " at line " + str(i + 1))
+
+                    j = 0
+
+                try:
+                    x = float(arguments[1])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument X in " + command + " at line " + str(i + 1))
+
+                    x = 0.0
+
+                try:
+                    y = float(arguments[2])
+                except Exception as ex:
+                    if type(ex) is not IndexError:
+                        logger.error("Invalid argument Y in " + command + " at line " + str(i + 1))
+
+                    y = 0.0
+
+                if j >= 0 and j < len(mesh.vertex_list):
+                    mesh.texcoords_list.append((j, x, y))
+                else:
+                    logger.error("VertexIndex references a non-existing vertex in " + command + " at line " + str(i + 1))
+
+            else:
+                logger.error("The command " + command + " is not supported at line " + str(i + 1))
+
+        # Finalize
+        if mesh is not None:
             meshes_list.append(mesh)
-
-        for m in meshes_list:
-            print("v:" + str(len(m.vertex_list)) + "," +
-                  "f:" + str(len(m.faces_list)))
-
-        # Convertion to Blender basis
-        #if is_transform:
-         #   self.toRightBasis(meshes_list)
-
-        # Transform texture coordinates to blender format
-        self.transformUV(meshes_list)
 
         return meshes_list
 
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def generateModel(self, csv_text, meshes_list):
+    def export_csv(self, option: ExportOption, meshes_list: List[CsvMesh], file_path: str) -> None:
+        if len(meshes_list) == 0:
+            logger.error("Select one or more objects to export.")
+            return
 
+        csv_text = []  # type: List[str]
+
+        # Header
+        csv_text.append(";---------------------------------------------------------------------------\n")
+        csv_text.append("; This file was exported from Blender by blenderCSV.\n")
+        csv_text.append("; https://github.com/maisvendoo/blenderCSV\n")
+        csv_text.append("; The copyright of this file belongs to the creator of the original content.\n")
+        csv_text.append(";---------------------------------------------------------------------------\n")
+
+        # Export model
         for mesh in meshes_list:
+            # Apply global scale
+            self.apply_scale(mesh, option.global_mesh_scale, option.global_mesh_scale, option.global_mesh_scale)
+
             # New mesh
             csv_text.append("\n; " + mesh.name + "\n")
-            csv_text.append("CreateMeshBuilder,\n")
+            csv_text.append("CreateMeshBuilder\n")
 
             # Vertices
-            for v, n in zip(mesh.vertex_list, mesh.normals_list):
-                addVertex = "AddVertex, "
+            for vertex, normal in zip(mesh.vertex_list, mesh.normals_list):
+                vertex_text = str(vertex[0]) + ", " + str(vertex[1]) + ", " + str(vertex[2])
+                normal_text = str(normal[0]) + ", " + str(normal[1]) + ", " + str(normal[2])
 
-                for coord in v:
-                    addVertex = addVertex + str(coord) + ", "
-
-                for coord in n:
-                    addVertex = addVertex + str(coord) + ", "
-
-                csv_text.append(addVertex + "\n")
-
-
-            csv_text.append("\n")
+                if option.use_normals:
+                    csv_text.append("AddVertex, " + vertex_text + ", " + normal_text + "\n")
+                else:
+                    csv_text.append("AddVertex, " + vertex_text + "\n")
 
             # Faces
             for face in mesh.faces_list:
+                face_text = ""
 
-                if mesh.is_addFace2:
-                    addFace = "AddFace2, "
+                for vertex_index in face:
+                    face_text += ", " + str(vertex_index)
+
+                if mesh.use_add_face2:
+                    csv_text.append("AddFace2" + face_text + "\n")
                 else:
-                    addFace = "AddFace, "
-
-                for v_idx in face:
-                    addFace = addFace + str(v_idx) + ", "
-                csv_text.append(addFace + "\n")
-
-            csv_text.append("\n")
+                    csv_text.append("AddFace" + face_text + "\n")
 
             # Diffuse color
-            setColor = "SetColor, "
-            for c in mesh.diffuse_color:
-                setColor = setColor + str(c) + ","
-            csv_text.append(setColor + "\n")
+            csv_text.append("SetColor, " + str(mesh.diffuse_color[0]) + ", " + str(mesh.diffuse_color[1]) + ", " + str(mesh.diffuse_color[2]) + ", " + str(mesh.diffuse_color[3]) + "\n")
 
-            # Decale color
-            if mesh.is_decale:
-                setDecalTransparentColor = "SetDecalTransparentColor, "
-                for c in mesh.decale_color:
-                    setDecalTransparentColor = setDecalTransparentColor + str(c) + ","
-                csv_text.append(setDecalTransparentColor + "\n")
+            # Emissive color
+            if mesh.use_emissive_color:
+                csv_text.append("SetEmissiveColor, " + str(mesh.emissive_color[0]) + ", " + str(mesh.emissive_color[1]) + ", " + str(mesh.emissive_color[2]) + "\n")
+
+            # Blend mode
+            csv_text.append("SetBlendMode, " + mesh.blend_mode + ", " + str(mesh.glow_half_distance) + ", " + mesh.glow_attenuation_mode + "\n")
 
             # Texture
-            if mesh.texture_file != "":
-                loadTexture = "LoadTexture, " + mesh.texture_file
-                csv_text.append(loadTexture + "\n")
+            model_dir = pathlib.Path(file_path).parent
 
-                for t_idx, tc in enumerate(mesh.texcoords_list):
-                    setTextureCoordinates = "SetTextureCoordinates, "
-                    setTextureCoordinates = setTextureCoordinates + str(t_idx) + "," + str(round(tc[1], 3)) + "," + str(round(tc[2], 3)) + ","
-                    csv_text.append(setTextureCoordinates + "\n")
+            if mesh.daytime_texture_file != "" and mesh.nighttime_texture_file != "":
+                csv_text.append("LoadTexture, " + os.path.relpath(str(mesh.daytime_texture_file), str(model_dir)) + ", " + os.path.relpath(str(mesh.nighttime_texture_file), str(model_dir)) + "\n")
+            elif mesh.daytime_texture_file != "":
+                csv_text.append("LoadTexture, " + os.path.relpath(str(mesh.daytime_texture_file), str(model_dir)) + "\n")
+            elif mesh.nighttime_texture_file != "":
+                csv_text.append("LoadTexture, , " + os.path.relpath(str(mesh.nighttime_texture_file), str(model_dir)) + "\n")
 
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def export(self, path, meshes_list, left_coords_transform = True):
+            # Transparent color
+            if mesh.use_transparent_color:
+                csv_text.append("SetDecalTransparentColor, " + str(mesh.transparent_color[0]) + ", " + str(mesh.transparent_color[1]) + ", " + str(mesh.transparent_color[2]) + "\n")
 
-        if len(meshes_list) == 0:
-            print("Please, select objects for export")
-            return
+            # Texture coordinates
+            for texcoords in mesh.texcoords_list:
+                csv_text.append("SetTextureCoordinates, " + str(texcoords[0]) + ", " + str(texcoords[1]) + ", " + str(texcoords[2]) + "\n")
 
-        csv_text = []
-        csv_text.append(";------------------------------------------------------\n")
-        csv_text.append("; CSV exporter from Blender, RGUPS, Dmitry Pritykin\n")
-        csv_text.append(";------------------------------------------------------\n")
-
-        # Conversion to left basis
-        #if left_coords_transform:
-         #   self.toLeftBasis(meshes_list)
-
-        # Transform UV coordinates
-        self.transformUV(meshes_list)
-        # Generate mesh
-        self.generateModel(csv_text, meshes_list)
-
+        # Write file
         try:
-
-            # Output in file
-            f = open(path, "wt", encoding="utf-8")
-            f.writelines(csv_text)
-            f.close()
-
+            with open(file_path, "wt", encoding="utf-8") as f:
+                f.writelines(csv_text)
         except Exception as ex:
-            print(ex)
-            return
-
+            logger.critical(ex)

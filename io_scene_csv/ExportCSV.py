@@ -1,235 +1,169 @@
-#-------------------------------------------------------------------------------
+#    Copyright 2018, 2019 Dmirty Pritykin, 2019 S520
 #
-#       CSV models export module
-#       (c) RGUPS, Virtual Railway 26/07/2018
-#       Developer: Dmitry Pritykin
+#    This file is part of blenderCSV.
 #
-#-------------------------------------------------------------------------------
+#    blenderCSV is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    blenderCSV is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with blenderCSV.  If not, see <http://www.gnu.org/licenses/>.
+
 import bpy
+import bmesh
+import filecmp
+import pathlib
 import os
+import shutil
+from typing import List, Tuple, Dict
+from . import CSV
+from . import logger
+from . import Transform
 
-#-------------------------------------------------------------------------------
-#
-#-------------------------------------------------------------------------------
-class ExportProps:
 
+class ExportCsv:
     def __init__(self):
-        self.is_coord_transform = False
-        self.scale = 1.0
-        self.is_face2 = False
-        self.use_transparent_decale_color = False
-        self.decale_red = 0
-        self.decale_green = 0
-        self.decale_blue = 0
-        self.is_copy_textures = False
+        self.file_path = ""
+        self.option = CSV.ExportOption()
 
-#-------------------------------------------------------------------------------
-#
-#-------------------------------------------------------------------------------
-class ExportCSV:
+    def copy_texture_separate_directory(self, model_dir: pathlib.PurePath, texture_path: pathlib.PurePath) -> str:
+        texture_dir = model_dir.joinpath(pathlib.Path(self.file_path).stem + "-textures")
 
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def __init__(self):
-        self.filepath = ""
-        self.export_props = ExportProps()
-
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def addFaceToMesh(self, md, fc, mesh):
-
-        face = []
-
-        # Перебираем все вершины в данной грани по индексам и порядковым номерам
-        for i, vert_idx in enumerate(fc.vertices):
-            # Берем вершину из массива вершин всего меша
-            loc_vertex = md.vertices[vert_idx]
-            vertex = list(loc_vertex.co)
-
-            # Проверяем, имеется ли уже такая вершина в CSV-сетке
-            # if not (vertex in mesh.vertex_list):
-            # Если имеется, до добаляем её как очередную
-            mesh.vertex_list.append(vertex)
-            mesh.normals_list.append(list(loc_vertex.normal))
-            mesh.vertex_indices.append(vert_idx)
-            v_idx = len(mesh.vertex_list) - 1
-            face.append(v_idx)
-
-        # Пытаемся работать с UV-разверткой
-        for uv_layer in md.uv_layers:
-            for i in fc.loop_indices:
-                uvCoord = uv_layer.data[i].uv
-                lookup_idx = mesh.vertex_indices.index(md.loops[i].vertex_index)
-                texel = [lookup_idx, uvCoord[0], uvCoord[1]]
-                mesh.texcoords_list.append(texel)
-
-        mesh.faces_list.append(face)
-
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def copyTexture(self, texture_path, model_dir):
-        filename, file_ext = os.path.splitext(self.filepath)
-        filename = os.path.basename(filename)
-
-        texture_name = os.path.basename(texture_path)
-
-        rel_tex_dir = filename + "-textures"
-        texture_dir = os.path.join(model_dir, rel_tex_dir)
-
-        if not os.path.exists(texture_dir):
-            old_mask = os.umask(0)
-            os.chdir(model_dir)
-            os.makedirs(rel_tex_dir, mode=0o777)
-            os.umask(old_mask)
-
-        from shutil import copyfile
         try:
-            dest_path = os.path.join(texture_dir, texture_name)
+            os.makedirs(str(texture_dir), exist_ok=True)
+        except Exception as ex:
+            logger.critical(ex)
+            return str(texture_path)
 
-            if not os.path.exists(dest_path):
-                copyfile(texture_path, dest_path)
+        try:
+            dest_path = texture_dir.joinpath(texture_path.name)
+
+            if not os.path.exists(str(dest_path)) or not filecmp.cmp(str(texture_path), str(dest_path)):
+                shutil.copy2(str(texture_path), str(dest_path))
 
         except Exception as ex:
-            print(ex)
-            return ""
+            logger.critical(ex)
+            return str(texture_path)
 
-        return os.path.join(rel_tex_dir, texture_name)
+        return str(dest_path)
 
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def getSelectedMeshes(self):
+    def export_model(self, file_path: str) -> None:
+        self.file_path = file_path
 
-        from . import GeometryMath as gm
+        meshes_list = []  # type: List[CSV.CsvMesh]
 
-        # Получаем все выделеные объекты
-        objs = bpy.context.selected_objects
+        object_list = bpy.context.selected_objects
 
-        # Список CSV-сеток
-        meshes_list = []
+        for obj in object_list:
+            if obj.type != "MESH":
+                continue
 
-        # Перебираем все объекты
-        for obj in objs:
+            logger.info("Process object: " + obj.name)
 
-            # Если текущий объект сеточный
-            if obj.type == 'MESH':
+            blender_mesh = bmesh.new()
+            blender_mesh.from_mesh(obj.data)
 
-                from .CSV import CSVmesh
+            Transform.swap_coordinate_system(obj.matrix_world, blender_mesh, self.option.use_transform_coords)
 
-                print("Process object: " + obj.name)
+            # Group faces by material index.
+            blender_faces = {}  # type: Dict[int, List[bmesh.types.BMFace]]
 
-                # Берем данные о сетке текущего объекта
-                md = obj.data
+            for face in blender_mesh.faces:
+                if blender_faces.get(face.material_index) is None:
+                    blender_faces[face.material_index] = []
 
-                # Сортируем полигоны по индексу используемого материала
-                csv_meshes = {}
-                for f in md.polygons:
-                    csv_meshes[f.material_index] = []
+                blender_faces[face.material_index].append(face)
 
-                for f in md.polygons:
-                    csv_meshes[f.material_index].append(f)
+            for m_idx, faces in blender_faces.items():
+                # Create a new CsvMesh.
+                mesh = CSV.CsvMesh()
+                mesh.name = "Mesh: " + obj.data.name
 
-                print(csv_meshes)
+                # Add vertices to mesh
+                blender_vertices = []  # type: List[Tuple[bmesh.types.BMFace, bmesh.types.BMVert]]
 
-                # Для кажой группы граней с одинаковым материалом
-                for key, faces in csv_meshes.items():
+                for face in faces:
+                    for vertex in face.verts:
+                        if (face, vertex) not in blender_vertices:
+                            blender_vertices.append((face, vertex))
 
-                    # Создаем новую CSV-сетку
-                    mesh = CSVmesh()
-                    mesh.name = "Mesh: " + md.name + "-" + str(key)
+                for vertex in blender_vertices:
+                    mesh.vertex_list.append((vertex[1].co[0], vertex[1].co[1], vertex[1].co[2]))
+                    mesh.normals_list.append((vertex[1].normal[0], vertex[1].normal[1], vertex[1].normal[2]))
 
-                    # Перебираем все грани текущей сетки
-                    for f in faces:
-                        # Добавляем грань в сетку
-                        self.addFaceToMesh(md, f, mesh)
+                # Add faces to mesh
+                for face in faces:
+                    indices = []  # type: List[int]
 
-                    # ---- Отладочная печать параметров меша в консоль ----
-                    for i, v in enumerate(mesh.vertex_list):
-                        print("Vertex: ", i, " ", v, " Normal: ", mesh.normals_list[i])
+                    for vertex in face.verts:
+                        indices.append(blender_vertices.index((face, vertex)))
 
-                    for i, fc in enumerate(mesh.faces_list):
-                        print("Face: ", i, " ", fc)
+                    mesh.faces_list.append(tuple(indices))
 
-                    for i, tx in enumerate(mesh.texcoords_list):
-                        print("Tex. coords: ", i, " ", tx)
+                # Add texcoords to mesh
+                if blender_mesh.loops.layers.uv.active is not None:
+                    for face in faces:
+                        for loop in face.loops:
+                            vertex_index = blender_vertices.index((face, loop.vert))
+                            uv = loop[blender_mesh.loops.layers.uv.active].uv
+                            texcoords = (vertex_index, uv[0], 1.0 - uv[1])
 
-                    print("Vertex's indices: ", mesh.vertex_indices)
-                    # ------------------------------------------------------
+                            if texcoords not in mesh.texcoords_list:
+                                mesh.texcoords_list.append(texcoords)
 
-                    # Работаем с материалом
-                    if obj.material_slots:
-                        mat = obj.material_slots[key].material
-                        mesh.name += " Material: " + mat.name
+                # Add material to mesh
+                if m_idx < len(obj.material_slots):
+                    mat = obj.material_slots[m_idx].material
+                    mesh.name += ", Material: " + mat.name
 
-                        # Устанавливаем диффузный цвет
-                        for c in mat.diffuse_color:
-                            mesh.diffuse_color.append(round(c * 255))
+                    # Add diffuse color to mesh
+                    mesh.diffuse_color = (round(mat.diffuse_color[0] * 255), round(mat.diffuse_color[1] * 255), round(mat.diffuse_color[2] * 255), round(mat.alpha * 255) if mat.use_transparency else 255)
 
-                        # Устанавливаем альфа-канал
-                        if mat.use_transparency:
-                            mesh.diffuse_color.append(round(mat.alpha * 255))
-                        else:
-                            mesh.diffuse_color.append(255)
+                    # Add texture to mesh
+                    model_dir = pathlib.Path(self.file_path).parent
 
-                        # Проверяем наличие текстур
-                        if mat.texture_slots:
+                    if mat.active_texture_index < len(mat.texture_slots):
+                        texture_slot = mat.texture_slots[mat.active_texture_index]
 
-                            # Берем индекс активной текстуры
-                            tex_idx = mat.active_texture_index
-                            print("Texture index: ", tex_idx)
+                        if texture_slot is not None and type(texture_slot.texture) is bpy.types.ImageTexture:
+                            if texture_slot.texture.image.filepath != "":
+                                texture_path = pathlib.Path(bpy.path.abspath(texture_slot.texture.image.filepath)).resolve()
 
-                            try:
-                                texture_path = mat.texture_slots[tex_idx].texture.image.filepath
-                                texture_path = bpy.path.abspath(texture_path)
-                                model_dir = os.path.dirname(self.filepath)
-
-                                if self.export_props.is_copy_textures:
-                                    mesh.texture_file = self.copyTexture(texture_path, model_dir)
+                                if self.option.use_copy_texture_separate_directory:
+                                    mesh.daytime_texture_file = self.copy_texture_separate_directory(model_dir, texture_path)
                                 else:
-                                    rel_path = os.path.relpath(texture_path, model_dir)
-                                    mesh.texture_file = rel_path
+                                    mesh.daytime_texture_file = str(texture_path)
 
-                                print("Texture path: ", mesh.texture_file)
-                            except Exception as ex:
-                                print(ex)
+                            mesh.diffuse_color = (mesh.diffuse_color[0], mesh.diffuse_color[1], mesh.diffuse_color[2], round(texture_slot.alpha_factor * 255))
 
-                    else:
-                        mesh.diffuse_color = [128, 128, 128, 255]
-                        mesh.name += " Material: Undefined"
-                        print("Material is't defined. Applied: ", mesh.diffuse_color)
+                    mesh.use_add_face2 = mat.csv_props.use_add_face2
 
-                    # Устанавливаем декаль, если надо
-                    mesh.is_decale = self.export_props.use_transparent_decale_color
+                    if mat.csv_props.nighttime_texture_file != "":
+                        texture_path = pathlib.Path(bpy.path.abspath(mat.csv_props.nighttime_texture_file)).resolve()
 
-                    if mesh.is_decale:
-                        mesh.decale_color.append(self.export_props.decale_red)
-                        mesh.decale_color.append(self.export_props.decale_green)
-                        mesh.decale_color.append(self.export_props.decale_blue)
+                        if self.option.use_copy_texture_separate_directory:
+                            mesh.nighttime_texture_file = self.copy_texture_separate_directory(model_dir, texture_path)
+                        else:
+                            mesh.nighttime_texture_file = str(texture_path)
+                else:
+                    mesh.name += ", Material: Undefined"
 
-                    # Устанавливаем двойные грани, если надо
-                    mesh.is_addFace2 = self.export_props.is_face2
+                # Set options to mesh
+                mesh.use_emissive_color = obj.csv_props.use_emissive_color
+                mesh.emissive_color = (round(obj.csv_props.emissive_color[0] * 255), round(obj.csv_props.emissive_color[1] * 255), round(obj.csv_props.emissive_color[2] * 255))
+                mesh.blend_mode = obj.csv_props.blend_mode
+                mesh.glow_half_distance = obj.csv_props.glow_half_distance
+                mesh.glow_attenuation_mode = obj.csv_props.glow_attenuation_mode
+                mesh.use_transparent_color = obj.csv_props.use_transparent_color
+                mesh.transparent_color = (round(obj.csv_props.transparent_color[0] * 255), round(obj.csv_props.transparent_color[1] * 255), round(obj.csv_props.transparent_color[2] * 255))
 
-                    # Переходим к координатам OpenBVE
-                    if self.export_props.is_coord_transform:
-                        print("Convertion to CSV coordinate system...")
-                        gm.toLeftBasis(obj, mesh)
+                # Finalize
+                meshes_list.append(mesh)
 
-                    # Добавляем меш в список
-                    meshes_list.append(mesh)
-
-        return meshes_list
-
-    #---------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------
-    def exportModel(self, path):
-
-        self.filepath = path
-
-        from .CSV import CSVLoader
-
-        exporter = CSVLoader()
-        exporter.export(path, self.getSelectedMeshes(), self.export_props.is_coord_transform)
+        CSV.CsvObject().export_csv(self.option, meshes_list, self.file_path)
